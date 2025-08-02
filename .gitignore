@@ -1,0 +1,6 @@
+.vscode
+_gitignored/
+.DS_Store
+*/.DS_Store
+.tmp
+*.code-workspace
