@@ -1,10 +1,10 @@
 # Caddyy
 
-> Next-gen media automation platform - A modern, self-contained alternative to Sonarr/Radarr
+> A Modern Media Management Solution
 
 ## Overview
 
-Caddyy is a media automation application that simplifies the process of fetching and organizing media content.
+Caddyy is a media automation application that simplifies the process of fetching and organizing media content. Designed as a simple-to-use alternative to Radarr/Sonarr.
 
 ### Key Features (Planned)
 
