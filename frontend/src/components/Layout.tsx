@@ -1,5 +1,5 @@
-import { ReactNode, useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { ReactNode, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { 
   Home, 
   Film, 
@@ -7,8 +7,7 @@ import {
   Download, 
   Settings,
   Activity,
-  ChevronDown,
-  ChevronRight
+  Search
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -28,106 +27,45 @@ const navigation: NavigationItem[] = [
   { name: 'Movies', href: '/movies', icon: Film },
   { name: 'TV Shows', href: '/shows', icon: Tv },
   { name: 'Downloads', href: '/downloads', icon: Download },
-  { 
-    name: 'Settings', 
-    icon: Settings,
-    children: [
-      { name: 'General', href: '/settings/general', icon: Settings },
-    ]
-  },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
-  const [expandedItems, setExpandedItems] = useState<string[]>(() => {
-    // Expand 'Settings' if on a settings-related route
-    return location.pathname.startsWith('/settings') ? ['Settings'] : []
-  })
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
 
-  // Auto-collapse/expand based on current route
-  useEffect(() => {
-    if (location.pathname.startsWith('/settings')) {
-      // Expand Settings if we're on a settings page and it's not already expanded
-      setExpandedItems(prev => 
-        prev.includes('Settings') ? prev : [...prev, 'Settings']
-      )
-    } else {
-      // Collapse Settings if we navigate away from settings
-      setExpandedItems(prev => 
-        prev.filter(name => name !== 'Settings')
-      )
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      (e.target as HTMLInputElement).blur();
     }
-  }, [location.pathname])
-
-  const toggleExpanded = (itemName: string) => {
-    setExpandedItems(prev => 
-      prev.includes(itemName) 
-        ? prev.filter(name => name !== itemName)
-        : [...prev, itemName]
-    )
   }
 
   const renderNavigationItem = (item: NavigationItem) => {
-    const hasChildren = item.children && item.children.length > 0
-    const isExpanded = expandedItems.includes(item.name)
-    const isActive = item.href ? location.pathname === item.href : false
-    const isChildActive = item.children?.some(child => child.href === location.pathname)
+    const isActive = item.href === '/' 
+      ? location.pathname === '/' 
+      : location.pathname.startsWith(item.href!)
 
     return (
       <li key={item.name}>
-        {hasChildren ? (
-          <>
-            <button
-              onClick={() => toggleExpanded(item.name)}
-              className={clsx(
-                'w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
-                isChildActive
-                  ? 'bg-slate-800 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              )}
-            >
-              <item.icon className="w-5 h-5 mr-3" />
-              {item.name}
-              {isExpanded ? (
-                <ChevronDown className="w-4 h-4 ml-auto" />
-              ) : (
-                <ChevronRight className="w-4 h-4 ml-auto" />
-              )}
-            </button>
-            {isExpanded && item.children && (
-              <ul className="ml-6 mt-1 space-y-1">
-                {item.children.map((child) => (
-                  <li key={child.name}>
-                    <Link
-                      to={child.href!}
-                      className={clsx(
-                        'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
-                        location.pathname === child.href
-                          ? 'bg-blue-600 text-white'
-                          : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                      )}
-                    >
-                      {child.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>
-        ) : (
-          <Link
-            to={item.href!}
-            className={clsx(
-              'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
-              isActive
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-            )}
-          >
-            <item.icon className="w-5 h-5 mr-3" />
-            {item.name}
-          </Link>
-        )}
+        <Link
+          to={item.href!}
+          onClick={() => {
+            if (!location.pathname.startsWith(item.href!)) {
+              setSearchQuery('')
+            }
+          }}
+          className={clsx(
+            'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+            isActive
+              ? 'bg-blue-600 text-white'
+              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+          )}
+        >
+          <item.icon className="w-5 h-5 mr-3" />
+          {item.name}
+        </Link>
       </li>
     )
   }
@@ -143,6 +81,20 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
           
+          <div className="px-6 pb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search movies & TV shows..."
+                className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearch}
+              />
+            </div>
+          </div>
+          
           <nav className="px-3">
             <ul className="space-y-1">
               {navigation.map(renderNavigationItem)}
@@ -151,7 +103,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
         
         <div className="flex-1">
-          <main className="p-6">
+          <main>
             {children}
           </main>
         </div>

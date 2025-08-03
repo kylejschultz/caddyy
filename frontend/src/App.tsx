@@ -4,7 +4,9 @@ import Dashboard from './pages/Dashboard'
 import Movies from './pages/Movies'
 import Shows from './pages/Shows'
 import Downloads from './pages/Downloads'
-import SettingsGeneral from './pages/SettingsGeneral'
+import Settings from './pages/SettingsGeneral'
+import Search from './pages/Search'
+import MovieDetail from './pages/MovieDetail'
 
 function App() {
   return (
@@ -15,8 +17,17 @@ function App() {
           <Route path="/movies" element={<Movies />} />
           <Route path="/shows" element={<Shows />} />
           <Route path="/downloads" element={<Downloads />} />
+          <Route path="/downloads/completed" element={<Downloads />} />
+          <Route path="/downloads/history" element={<Downloads />} />
+          <Route path="/shows/add" element={<Shows />} />
+          <Route path="/shows/calendar" element={<Shows />} />
+          <Route path="/movies/add" element={<Movies />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/movie/:id" element={<MovieDetail />} />
           <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
-          <Route path="/settings/general" element={<SettingsGeneral />} />
+          <Route path="/settings/general" element={<Settings />} />
+          <Route path="/settings/users" element={<Settings />} />
+          <Route path="/settings/security" element={<Settings />} />
         </Routes>
       </Layout>
     </Router>
