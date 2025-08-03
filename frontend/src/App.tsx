@@ -7,6 +7,7 @@ import Downloads from './pages/Downloads'
 import Settings from './pages/SettingsGeneral'
 import Search from './pages/Search'
 import MovieDetail from './pages/MovieDetail'
+import TVShowDetail from './pages/TVShowDetail'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/movies/add" element={<Movies />} />
           <Route path="/search" element={<Search />} />
           <Route path="/movie/:id" element={<MovieDetail />} />
+          <Route path="/tv/:id" element={<TVShowDetail />} />
           <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
           <Route path="/settings/general" element={<Settings />} />
           <Route path="/settings/users" element={<Settings />} />

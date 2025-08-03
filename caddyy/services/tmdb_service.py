@@ -220,6 +220,43 @@ class TMDBService:
             print(f"Error getting movie details: {e}")
             return None
     
+    async def get_tv_details(self, tv_id: int) -> Optional[Dict[str, Any]]:
+        """Get detailed information about a specific TV show"""
+        url = f"{TMDB_BASE_URL}/tv/{tv_id}"
+        params = {
+            "api_key": self.api_key,
+            "append_to_response": "credits"
+        }
+        
+        try:
+            response = await self.client.get(url, params=params)
+            response.raise_for_status()
+            return response.json()
+            
+        except Exception as e:
+            print(f"Error getting TV show details: {e}")
+            return None
+    
+    async def get_tv_season_details(self, tv_id: int, season_number: int) -> Optional[Dict[str, Any]]:
+        """Get detailed information about a specific season of a TV show"""
+        url = f"{TMDB_BASE_URL}/tv/{tv_id}/season/{season_number}"
+        params = {
+            "api_key": self.api_key
+        }
+        
+        try:
+            response = await self.client.get(url, params=params)
+            response.raise_for_status()
+            return response.json()
+            
+        except Exception as e:
+            print(f"Error getting TV season details: {e}")
+            return None
+    
+    def get_image_url(self, path: Optional[str]) -> Optional[str]:
+        """Public method to build full image URL from TMDB path"""
+        return self._build_image_url(path)
+    
     async def close(self):
         """Close the HTTP client"""
         await self.client.aclose()

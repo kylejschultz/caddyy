@@ -73,15 +73,16 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-slate-950">
       <div className="flex">
-        <div className="w-64 bg-slate-900 min-h-screen border-r border-slate-800">
-          <div className="p-6">
+        {/* Fixed Sidebar */}
+        <div className="fixed left-0 top-0 w-64 h-screen bg-slate-900 border-r border-slate-800 z-30 flex flex-col">
+          <div className="p-6 flex-shrink-0">
             <div className="flex items-center space-x-2">
               <Activity className="w-8 h-8 text-blue-500" />
               <h1 className="text-xl font-bold text-white">Caddyy</h1>
             </div>
           </div>
           
-          <div className="px-6 pb-4">
+          <div className="px-6 pb-4 flex-shrink-0">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -95,15 +96,16 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
           
-          <nav className="px-3">
+          <nav className="px-3 flex-1 overflow-y-auto">
             <ul className="space-y-1">
               {navigation.map(renderNavigationItem)}
             </ul>
           </nav>
         </div>
         
-        <div className="flex-1">
-          <main>
+        {/* Main content with left margin to account for fixed sidebar */}
+        <div className="flex-1 ml-64">
+          <main className="min-h-screen">
             {children}
           </main>
         </div>

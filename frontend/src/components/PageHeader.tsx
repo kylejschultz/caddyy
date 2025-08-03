@@ -19,7 +19,7 @@ export default function PageHeader({ title, description, tabs, actions }: PageHe
   const location = useLocation()
 
   return (
-    <div className="border-b border-slate-800 bg-slate-900/50">
+    <div className="sticky top-0 z-20 border-b border-slate-800 bg-slate-900">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
@@ -39,7 +39,9 @@ export default function PageHeader({ title, description, tabs, actions }: PageHe
           <div className="mt-6">
             <nav className="flex space-x-1 bg-slate-800/50 rounded-lg p-1" aria-label="Tabs">
               {tabs.map((tab) => {
-                const isActive = location.pathname === tab.href
+                // Handle both path-only and path+search matching
+                const currentUrl = `${location.pathname}${location.search}`
+                const isActive = currentUrl === tab.href || location.pathname === tab.href
                 
                 return (
                   <Link
