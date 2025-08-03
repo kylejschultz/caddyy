@@ -4,32 +4,16 @@
 
 ## Overview
 
-Caddyy is a single-container media automation application that simplifies the process of fetching and organizing media content. Unlike traditional *arr applications that require multiple services (Jackett, Prowlarr, etc.), Caddyy provides everything you need in one Docker container.
+Caddyy is a media automation application that simplifies the process of fetching and organizing media content.
 
 ### Key Features (Planned)
 
-- 🎬 **Unified Media Management**: Movies and TV shows (music support planned)
-- 🔍 **Direct Indexer Integration**: Built-in Newznab-compatible indexer support (no Jackett needed)
+- 🎬 **Unified Media Management**: Movies and TV shows 
+- 🔍 **Direct Indexer Integration**: Built-in Newznab-compatible indexer support
 - 📡 **TMDB Integration**: Automatic metadata fetching and organization
 - ⬇️ **SABnzbd Integration**: Seamless download management
 - 🎯 **Simple Deployment**: Single Docker container with web UI configuration
 - 🚀 **Modern Stack**: FastAPI backend + React frontend
-
-## Architecture
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   React UI      │────│   FastAPI        │────│   SQLite DB     │
-│   (Frontend)    │    │   (Backend)      │    │   (Database)    │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                              │
-                    ┌─────────┼─────────┐
-                    │         │         │
-              ┌──────▼───┐ ┌───▼───┐ ┌───▼────┐
-              │   TMDB   │ │Newznab│ │SABnzbd │
-              │   API    │ │Indexer│ │Client  │
-              └──────────┘ └───────┘ └────────┘
-```
 
 ## Tech Stack
 
