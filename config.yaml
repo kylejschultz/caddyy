@@ -1,7 +1,0 @@
-app_description: A Modern Media Management Solution
-app_name: My Caddyy Instance
-authentication: None
-date_time_format: YYYY-MM-DD HH:mm:ss
-debug_mode: false
-log_level: INFO
-timezone: America/Los_Angeles
