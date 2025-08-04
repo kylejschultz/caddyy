@@ -6,7 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Any, Dict
 
-from caddyy.core.yaml_config import config_manager, AppConfig
+from backend.core.yaml_config import config_manager, AppConfig
 
 router = APIRouter()
 

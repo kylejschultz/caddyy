@@ -5,7 +5,7 @@ Search API endpoints
 from fastapi import APIRouter, Query
 from typing import List, Optional
 
-from caddyy.services.tmdb_service import tmdb_service, MediaResult
+from backend.services.tmdb_service import tmdb_service, MediaResult
 
 router = APIRouter()
 

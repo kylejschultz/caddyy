@@ -4,12 +4,12 @@ API routes module
 
 from fastapi import APIRouter
 
-from caddyy.api.health import router as health_router
-from caddyy.api.settings import router as settings_router
-from caddyy.api.search import router as search_router
-from caddyy.api.movies import router as movies_router
-from caddyy.api.tv import router as tv_router
-from caddyy.api.filesystem import router as filesystem_router
+from backend.api.health import router as health_router
+from backend.api.settings import router as settings_router
+from backend.api.search import router as search_router
+from backend.api.movies import router as movies_router
+from backend.api.tv import router as tv_router
+from backend.api.filesystem import router as filesystem_router
 
 router = APIRouter()
 

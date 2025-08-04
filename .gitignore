@@ -67,7 +67,7 @@ lerna-debug.log*
 
 # Frontend build output
 frontend/dist/
-caddyy/static/
+backend/static/
 
 # Logs
 *.log

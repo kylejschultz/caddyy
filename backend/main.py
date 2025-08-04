@@ -9,9 +9,9 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from caddyy.core.config import settings
-from caddyy.core.database import init_db
-from caddyy.api import router as api_router
+from backend.core.config import settings
+from backend.core.database import init_db
+from backend.api import router as api_router
 
 
 @asynccontextmanager
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     import uvicorn
     
     uvicorn.run(
-        "caddyy.main:app",
+        "backend.main:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=True,

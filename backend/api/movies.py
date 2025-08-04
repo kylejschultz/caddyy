@@ -5,7 +5,7 @@ Movie API endpoints
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 
-from caddyy.services.tmdb_service import tmdb_service
+from backend.services.tmdb_service import tmdb_service
 
 router = APIRouter()
 

@@ -76,7 +76,7 @@ If you prefer to run services separately:
 **Backend**:
 ```bash
 source venv/bin/activate
-python -m caddyy.main
+python -m backend.main
 # Serves on http://localhost:8000
 # API docs: http://localhost:8000/docs
 ```
@@ -92,7 +92,7 @@ npm run dev
 ```bash
 cd frontend
 npm run build
-# Builds to ../caddyy/static/
+# Builds to ../backend/static/
 ```
 
 ## Current Status

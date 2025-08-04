@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     DEBUG: bool = True
     
-    DATABASE_URL: str = "sqlite:///./caddyy.db"
+    DATABASE_URL: str = "sqlite:///./backend.db"
     
     TMDB_API_KEY: str = ""
     

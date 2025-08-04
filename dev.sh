@@ -18,7 +18,7 @@ trap cleanup SIGINT SIGTERM
 # Start backend
 echo "📡 Starting FastAPI backend on http://localhost:8000"
 source venv/bin/activate
-python -m caddyy.main &
+python -m backend.main &
 BACKEND_PID=$!
 
 # Wait a moment for backend to start

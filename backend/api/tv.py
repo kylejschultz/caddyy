@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 
-from caddyy.services.tmdb_service import TMDBService
+from backend.services.tmdb_service import TMDBService
 
 router = APIRouter()
 tmdb = TMDBService()
