@@ -4,11 +4,13 @@ import { FileBrowser } from '../components/FileBrowser';
 import { Plus, Trash2, Folder, X, Download, Edit3, Check, X as XIcon, ChevronDown, Film, Monitor, Filter } from 'lucide-react';
 
 interface MediaPath {
-  id: string;
-  type: 'movies' | 'tv' | 'downloads';
+  id: number;
+  media_type: 'movies' | 'tv' | 'downloads';
   path: string;
   name: string;
   enabled: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function SettingsPaths() {
@@ -19,8 +21,8 @@ export default function SettingsPaths() {
   const [loading, setLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editModalData, setEditModalData] = useState<{
-    id?: string;
-    type: 'movies' | 'tv' | 'downloads';
+    id?: number;
+    media_type: 'movies' | 'tv' | 'downloads';
     name: string;
     path: string;
   } | null>(null);
@@ -28,6 +30,7 @@ export default function SettingsPaths() {
   const [showAddDropdown, setShowAddDropdown] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'movies' | 'tv' | 'downloads'>('all');
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [showDockerInfo, setShowDockerInfo] = useState(false);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -47,38 +50,32 @@ export default function SettingsPaths() {
     };
   }, [showAddDropdown, showFilterDropdown]);
 
-  // Mock data for now - later we'll connect to backend
+  // Load media paths from backend
   useEffect(() => {
-    // Load existing paths from backend
-    setMediaPaths([
-      {
-        id: '1',
-        type: 'movies',
-        path: '/Users/kyle/Movies',
-        name: 'Movies Library',
-        enabled: true
-      },
-      {
-        id: '2',
-        type: 'tv',
-        path: '/Users/kyle/TV Shows',
-        name: 'TV Shows Library',
-        enabled: true
-      },
-      {
-        id: '3',
-        type: 'downloads',
-        path: '/Users/kyle/Downloads/Torrents',
-        name: 'Download Directory',
-        enabled: true
+    const fetchMediaPaths = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/media-paths/');
+        if (response.ok) {
+          const paths = await response.json();
+          setMediaPaths(paths);
+        } else {
+          console.error('Failed to fetch media paths');
+        }
+      } catch (error) {
+        console.error('Error fetching media paths:', error);
+      } finally {
+        setLoading(false);
       }
-    ]);
+    };
+
+    fetchMediaPaths();
   }, []);
 
-  const handleAddPath = (type: 'movies' | 'tv' | 'downloads') => {
+  const handleAddPath = (media_type: 'movies' | 'tv' | 'downloads') => {
     setEditModalData({
-      type,
-      name: `${type === 'movies' ? 'Movies' : type === 'tv' ? 'TV Shows' : 'Downloads'} Library`,
+      media_type,
+      name: `${media_type === 'movies' ? 'Movies' : media_type === 'tv' ? 'TV Shows' : 'Downloads'} Library`,
       path: ''
     });
     setShowEditModal(true);
@@ -87,7 +84,7 @@ export default function SettingsPaths() {
   const handleEditPath = (path: MediaPath) => {
     setEditModalData({
       id: path.id,
-      type: path.type,
+      media_type: path.media_type,
       name: path.name,
       path: path.path
     });
@@ -117,11 +114,13 @@ export default function SettingsPaths() {
       // Create or update the path
       const pathName = selectedPath.split('/').pop() || selectedPath;
       const newPath: MediaPath = {
-        id: editingPath?.id || Date.now().toString(),
-        type: browserType,
+        id: editingPath?.id || Date.now(),
+        media_type: browserType,
         path: selectedPath,
         name: editingPath?.name || `${browserType === 'movies' ? 'Movies' : browserType === 'tv' ? 'TV Shows' : 'Downloads'} - ${pathName}`,
-        enabled: true
+        enabled: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
       if (editingPath) {
@@ -148,13 +147,35 @@ export default function SettingsPaths() {
     }
   };
 
-  const handleRemovePath = (id: string) => {
-    if (confirm('Are you sure you want to remove this media path?')) {
+  const handleRemovePath = async (id: number) => {
+    if (!confirm('Are you sure you want to remove this media path?')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/media-paths/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to delete media path');
+      }
+
+      // Remove from state
       setMediaPaths(prev => prev.filter(p => p.id !== id));
+      alert('Media path removed successfully!');
+
+    } catch (error) {
+      console.error('Error removing path:', error);
+      alert(error instanceof Error ? error.message : 'Failed to remove path. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleTogglePath = (id: string) => {
+  const handleTogglePath = (id: number) => {
     setMediaPaths(prev => 
       prev.map(p => p.id === id ? { ...p, enabled: !p.enabled } : p)
     );
@@ -169,51 +190,57 @@ export default function SettingsPaths() {
     setLoading(true);
     
     try {
-      // Validate the path first
-      const validateResponse = await fetch('/api/filesystem/validate-path', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ path: editModalData.path }),
-      });
-      
-      const validation = await validateResponse.json();
-      
-      if (!validation.valid) {
-        alert(`Invalid path: ${validation.reason}`);
-        return;
-      }
-
-      const newPath: MediaPath = {
-        id: editModalData.id || Date.now().toString(),
-        type: editModalData.type,
-        path: editModalData.path,
+      const requestData = {
         name: editModalData.name.trim(),
+        path: editModalData.path,
+        media_type: editModalData.media_type,
         enabled: true
       };
 
+      let response;
       if (editModalData.id) {
-        // Edit existing path
-        setMediaPaths(prev => prev.map(p => p.id === editModalData.id ? newPath : p));
+        // Update existing path
+        response = await fetch(`/api/media-paths/${editModalData.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData),
+        });
       } else {
-        // Add new path
-        setMediaPaths(prev => [...prev, newPath]);
+        // Create new path
+        response = await fetch('/api/media-paths/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData),
+        });
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to save media path');
+      }
+
+      const savedPath = await response.json();
+
+      if (editModalData.id) {
+        // Update existing path in state
+        setMediaPaths(prev => prev.map(p => p.id === editModalData.id ? savedPath : p));
+      } else {
+        // Add new path to state
+        setMediaPaths(prev => [...prev, savedPath]);
       }
 
       setShowEditModal(false);
       setEditModalData(null);
 
-      // Show validation info
-      if (validation.has_media_files) {
-        alert(`Path ${editModalData.id ? 'updated' : 'added'} successfully! Found media files in this directory.`);
-      } else {
-        alert(`Path ${editModalData.id ? 'updated' : 'added'} successfully! No media files detected yet - you can add them later.`);
-      }
+      alert(`Path ${editModalData.id ? 'updated' : 'added'} successfully!`);
 
     } catch (error) {
       console.error('Error saving path:', error);
-      alert('Failed to save path. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to save path. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -381,14 +408,14 @@ export default function SettingsPaths() {
               // Filter and sort paths
               let filteredPaths = mediaPaths;
               if (filterType !== 'all') {
-                filteredPaths = mediaPaths.filter(p => p.type === filterType);
+                filteredPaths = mediaPaths.filter(p => p.media_type === filterType);
               }
               
               // Sort by type when showing all, otherwise by name
               if (filterType === 'all') {
                 filteredPaths = filteredPaths.sort((a, b) => {
                   const typeOrder = { movies: 0, tv: 1, downloads: 2 };
-                  const typeComparison = typeOrder[a.type] - typeOrder[b.type];
+                  const typeComparison = typeOrder[a.media_type] - typeOrder[b.media_type];
                   if (typeComparison !== 0) return typeComparison;
                   return a.name.localeCompare(b.name);
                 });
@@ -446,12 +473,12 @@ export default function SettingsPaths() {
                       <div key={path.id} className="bg-slate-700 border border-slate-600 rounded-lg p-4 hover:bg-slate-650 transition-colors">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
-                            {getTypeIcon(path.type)}
+                            {getTypeIcon(path.media_type)}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center space-x-2 mb-1">
                                 <p className="text-sm font-medium text-white truncate">{path.name}</p>
                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-600 text-slate-300">
-                                  {getTypeLabel(path.type)}
+                                  {getTypeLabel(path.media_type)}
                                 </span>
                               </div>
                               <p className="text-sm text-slate-400 font-mono truncate">{path.path}</p>
@@ -485,19 +512,27 @@ export default function SettingsPaths() {
         </div>
 
         {/* Docker Info */}
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-4">
-          <h4 className="text-sm font-medium text-blue-400 mb-2">Docker Volume Mounting</h4>
-          <p className="text-sm text-slate-300 mb-3">
-            When running Caddyy in Docker, you'll need to mount these directories as volumes:
-          </p>
-          <div className="bg-slate-700 rounded p-3 font-mono text-sm">
-            <div className="text-slate-300 mb-2"># Example docker-compose.yml volumes:</div>
-            {mediaPaths.filter(p => p.enabled).map((path) => (
-              <div key={path.id} className="text-slate-200">
-                - {path.path}:/media/{path.type}/{path.id.slice(-4)}
+        <div className="bg-slate-800 border border-slate-700 rounded-lg">
+          <button 
+            className="w-full text-left px-4 py-3 text-sm font-medium text-blue-400 bg-slate-700 hover:bg-slate-600 hover:text-white transition-colors flex items-center justify-between"
+            onClick={() => setShowDockerInfo(!showDockerInfo)}
+          >
+            Docker Volume Mounting
+            <ChevronDown className={`w-4 h-4 transform ${showDockerInfo ? 'rotate-180' : 'rotate-0'}`} />
+          </button>
+          {showDockerInfo && (
+            <div className="p-4">
+              <p className="text-sm text-slate-300 mb-3">
+                When running Caddyy in Docker, you'll need to mount these directories as volumes:
+              </p>
+              <div className="bg-slate-700 rounded p-3 font-mono text-sm">
+                <div className="text-slate-300 mb-2"># Example docker-compose.yml volumes:</div>
+                <div className="text-slate-200">  - /host/path/to/downloads:/media/downloads</div>
+                <div className="text-slate-200">  - /host/path/to/tv-shows:/media/tv</div>
+                <div className="text-slate-200">  - /host/path/to/movies:/media/movies</div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
         </div>
       </div>
@@ -512,7 +547,7 @@ export default function SettingsPaths() {
                 <Edit3 className="w-5 h-5 text-blue-500" />
                 <div>
                   <h2 className="text-lg font-medium text-white">
-                    {editModalData.id ? 'Edit' : 'Add'} {editModalData.type === 'movies' ? 'Movie' : editModalData.type === 'tv' ? 'TV Show' : 'Download'} Path
+                    {editModalData.id ? 'Edit' : 'Add'} {editModalData.media_type === 'movies' ? 'Movie' : editModalData.media_type === 'tv' ? 'TV Show' : 'Download'} Path
                   </h2>
                 </div>
               </div>

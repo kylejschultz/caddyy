@@ -13,7 +13,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../caddyy/static',
+    outDir: '../backend/static',
     emptyOutDir: true,
   },
 })
