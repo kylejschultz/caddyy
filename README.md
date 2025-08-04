@@ -104,9 +104,14 @@ npm run build
 - [x] SQLite database setup
 - [x] Development environment and build process
 - [x] Static file serving integration
+- [x] Modern UI layout with sidebar navigation and page headers
+- [x] Settings management interface
+- [x] Media paths configuration (Movies, TV Shows, Downloads)
+- [x] File browser component with directory navigation
+- [x] Filesystem API for browsing server directories
 
 ### 🚧 In Progress
-- [ ] Setting configuration via UI/YAML
+- [ ] Backend integration for persisting media paths
 - [ ] TMDB API integration
 - [ ] Indexer management system
 - [ ] Search functionality
