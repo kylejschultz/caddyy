@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
-import { Save, RotateCcw, Settings as SettingsIcon, User, Shield } from 'lucide-react'
+import { Save, RotateCcw, Settings as SettingsIcon, User, Shield, Folder as FolderIcon } from 'lucide-react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
 
@@ -61,6 +61,7 @@ export default function Settings() {
 
   const settingsTabs = [
     { name: 'General', href: '/settings/general', icon: SettingsIcon },
+    { name: 'Paths', href: '/settings/paths', icon: FolderIcon },
     { name: 'Users', href: '/settings/users', icon: User },
     { name: 'Security', href: '/settings/security', icon: Shield },
   ]
