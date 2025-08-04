@@ -135,4 +135,4 @@ This project follows clean code principles and incremental development:
 
 ## License
 
-[License TBD]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
