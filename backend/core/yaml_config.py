@@ -16,6 +16,7 @@ class GeneralConfig(BaseModel):
     date_time_format: str = "YYYY-MM-DD HH:mm:ss"
     debug_mode: bool = False
     tmdb_api_key: str = ""
+    theme: str = "system"  # Options: system, light, dark
 
 
 class MediaDirectory(BaseModel):

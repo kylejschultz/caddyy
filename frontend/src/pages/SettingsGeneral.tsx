@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
-import { Save, RotateCcw, Settings as SettingsIcon, User, Shield, Folder as FolderIcon } from 'lucide-react'
+import { Save, RotateCcw, Settings as SettingsIcon, User, Shield, Folder as FolderIcon, Sun, Moon, Monitor } from 'lucide-react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
 import SidebarNavigation from '../components/SidebarNavigation'
+import { useTheme, Theme } from '../contexts/ThemeContext'
 
 interface AppConfig {
   log_level: string
@@ -12,11 +13,13 @@ interface AppConfig {
   timezone: string
   date_time_format: string
   tmdb_api_key: string
+  theme: Theme
 }
 
 export default function Settings() {
   const location = useLocation()
   const queryClient = useQueryClient()
+  const { theme, setTheme } = useTheme()
   const [isDirty, setIsDirty] = useState(false)
   const [formData, setFormData] = useState<AppConfig | null>(null)
 
@@ -29,8 +32,11 @@ export default function Settings() {
   useEffect(() => {
     if (settings && !formData) {
       setFormData(settings)
+      if (settings.theme) {
+        setTheme(settings.theme)
+      }
     }
-  }, [settings, formData])
+  }, [settings, formData, setTheme])
 
   const updateMutation = useMutation({
     mutationFn: (updates: Partial<AppConfig>) => 
@@ -47,6 +53,11 @@ export default function Settings() {
     const newData = { ...formData, [field]: value }
     setFormData(newData)
     setIsDirty(JSON.stringify(newData) !== JSON.stringify(settings))
+    
+    // Update theme context immediately when theme changes
+    if (field === 'theme') {
+      setTheme(value as Theme)
+    }
   }
 
   const handleSave = () => {
@@ -164,6 +175,33 @@ export default function Settings() {
             </div>
             
             <div className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Theme
+                </label>
+                <div className="flex items-center gap-2">
+                  {(['system', 'light', 'dark'] as Theme[]).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => handleInputChange('theme', t)}
+                      className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors ${
+                        formData.theme === t
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}>
+                      {t === 'system' && <Monitor className="w-4 h-4" />}
+                      {t === 'light' && <Sun className="w-4 h-4" />}
+                      {t === 'dark' && <Moon className="w-4 h-4" />}
+                      <span className="capitalize">{t}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-slate-500 text-xs mt-1">
+                  Choose how the interface appears. System matches your device preference.
+                </p>
+              </div>
+              
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
                   Log Level
