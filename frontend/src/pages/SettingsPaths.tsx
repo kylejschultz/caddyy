@@ -150,14 +150,14 @@ export default function SettingsPaths() {
     }
   };
 
-  const handleRemovePath = async (id: number) => {
+  const handleRemovePath = async (index: number) => {
     if (!confirm('Are you sure you want to remove this media path?')) {
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/media-paths/${id}`, {
+      const response = await fetch(`/api/config/paths/media-directories/${index}`, {
         method: 'DELETE',
       });
 
@@ -166,8 +166,17 @@ export default function SettingsPaths() {
         throw new Error(errorData.detail || 'Failed to delete media path');
       }
 
-      // Remove from state
-      setMediaPaths(prev => prev.filter(p => p.id !== id));
+      // Refresh the media paths from config
+      const fetchResponse = await fetch('/api/config/paths/media-directories');
+      if (fetchResponse.ok) {
+        const paths = await fetchResponse.json();
+        const pathsWithIndex = paths.map((path: MediaPath, idx: number) => ({
+          ...path,
+          index: idx
+        }));
+        setMediaPaths(pathsWithIndex);
+      }
+      
       alert('Media path removed successfully!');
 
     } catch (error) {
@@ -201,9 +210,9 @@ export default function SettingsPaths() {
       };
 
       let response;
-      if (editModalData.id) {
+      if (editModalData.index !== undefined) {
         // Update existing path
-        response = await fetch(`/api/media-paths/${editModalData.id}`, {
+        response = await fetch(`/api/config/paths/media-directories/${editModalData.index}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -212,7 +221,7 @@ export default function SettingsPaths() {
         });
       } else {
         // Create new path
-        response = await fetch('/api/media-paths/', {
+        response = await fetch('/api/config/paths/media-directories', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -226,20 +235,21 @@ export default function SettingsPaths() {
         throw new Error(errorData.detail || 'Failed to save media path');
       }
 
-      const savedPath = await response.json();
-
-      if (editModalData.id) {
-        // Update existing path in state
-        setMediaPaths(prev => prev.map(p => p.id === editModalData.id ? savedPath : p));
-      } else {
-        // Add new path to state
-        setMediaPaths(prev => [...prev, savedPath]);
+      // Refresh the media paths from config
+      const fetchResponse = await fetch('/api/config/paths/media-directories');
+      if (fetchResponse.ok) {
+        const paths = await fetchResponse.json();
+        const pathsWithIndex = paths.map((path: MediaPath, idx: number) => ({
+          ...path,
+          index: idx
+        }));
+        setMediaPaths(pathsWithIndex);
       }
 
       setShowEditModal(false);
       setEditModalData(null);
 
-      alert(`Path ${editModalData.id ? 'updated' : 'added'} successfully!`);
+      alert(`Path ${editModalData.index !== undefined ? 'updated' : 'added'} successfully!`);
 
     } catch (error) {
       console.error('Error saving path:', error);
@@ -473,7 +483,7 @@ export default function SettingsPaths() {
                     };
 
                     return (
-                      <div key={path.id} className="bg-slate-700 border border-slate-600 rounded-lg p-4 hover:bg-slate-650 transition-colors">
+                      <div key={path.index} className="bg-slate-700 border border-slate-600 rounded-lg p-4 hover:bg-slate-650 transition-colors">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3 flex-1 min-w-0">
                             {getTypeIcon(path.media_type)}
@@ -496,7 +506,7 @@ export default function SettingsPaths() {
                               <Edit3 className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleRemovePath(path.id)}
+                              onClick={() => handleRemovePath(path.index!)}
                               className="text-slate-400 hover:text-red-400 transition-colors p-2 rounded-md hover:bg-slate-600"
                               title="Remove path"
                             >
@@ -550,7 +560,7 @@ export default function SettingsPaths() {
                 <Edit3 className="w-5 h-5 text-blue-500" />
                 <div>
                   <h2 className="text-lg font-medium text-white">
-                    {editModalData.id ? 'Edit' : 'Add'} {editModalData.media_type === 'movies' ? 'Movie' : editModalData.media_type === 'tv' ? 'TV Show' : 'Download'} Path
+                    {editModalData.index !== undefined ? 'Edit' : 'Add'} {editModalData.media_type === 'movies' ? 'Movie' : editModalData.media_type === 'tv' ? 'TV Show' : 'Download'} Path
                   </h2>
                 </div>
               </div>
@@ -614,7 +624,7 @@ export default function SettingsPaths() {
                   disabled={loading}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors disabled:opacity-50"
                 >
-                  {loading ? 'Saving...' : editModalData.id ? 'Update Path' : 'Add Path'}
+                  {loading ? 'Saving...' : editModalData.index !== undefined ? 'Update Path' : 'Add Path'}
                 </button>
               </div>
             </div>
