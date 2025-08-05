@@ -139,7 +139,7 @@ export default function Layout({ children }: LayoutProps) {
                 'flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors',
                 location.pathname.startsWith(item.href!)
                   ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white'
               )}
             >
               <div className="flex items-center">
@@ -149,7 +149,7 @@ export default function Layout({ children }: LayoutProps) {
               {isExpanded ? <ChevronDown /> : <ChevronRight />}
             </div>
             {isExpanded && item.children && (
-              <ul className="mt-1 space-y-1 ml-3 border-l border-slate-700">
+              <ul className="mt-1 space-y-1 ml-3 border-l border-gray-200 dark:border-slate-700">
                 {item.children.map((child) => (
                   <li key={child.name}>
                     <Link
@@ -162,13 +162,13 @@ export default function Layout({ children }: LayoutProps) {
                       className={clsx(
                         'flex items-center pl-4 pr-3 py-2 text-sm transition-colors rounded-r-md',
                         location.pathname === child.href
-                          ? 'bg-blue-600/30 text-white font-semibold border-l-2 border-blue-400'
-                          : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 font-normal'
+                          ? 'bg-blue-600/30 text-gray-900 dark:text-white font-semibold border-l-2 border-blue-400'
+                          : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100/40 dark:hover:bg-slate-800/40 hover:text-gray-700 dark:hover:text-slate-200 font-normal'
                       )}
                     >
                       <child.icon className={clsx(
                         'w-4 h-4 mr-3',
-                        location.pathname === child.href ? 'text-blue-300' : ''
+                        location.pathname === child.href ? 'text-blue-400 dark:text-blue-300' : ''
                       )} />
                       {child.name}
                     </Link>
@@ -189,7 +189,7 @@ export default function Layout({ children }: LayoutProps) {
               'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
               isActive
                 ? 'bg-blue-600 text-white'
-                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white'
             )}
           >
             <item.icon className="w-5 h-5 mr-3" />
@@ -201,24 +201,24 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       <div className="flex">
         {/* Fixed Sidebar */}
-        <div className="fixed left-0 top-0 w-64 h-screen bg-slate-900 border-r border-slate-800 z-30 flex flex-col">
+        <div className="fixed left-0 top-0 w-64 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 z-30 flex flex-col">
           <div className="p-6 flex-shrink-0">
             <div className="flex items-center space-x-2">
               <Activity className="w-8 h-8 text-blue-500" />
-              <h1 className="text-xl font-bold text-white">Caddyy</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Caddyy</h1>
             </div>
           </div>
           
           <div className="px-6 pb-4 flex-shrink-0">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-400" />
               <input
                 type="text"
                 placeholder="Search movies & TV shows..."
-                className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-md text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearch}

@@ -39,7 +39,11 @@ export function ThemeProvider({ children, defaultTheme = 'system' }: ThemeProvid
     // Apply theme to document
     const root = document.documentElement
     root.classList.remove('light', 'dark')
-    root.classList.add(resolved)
+    if (resolved === 'dark') {
+      root.classList.add('dark')
+    } else {
+      root.classList.add('light')
+    }
   }
 
   useEffect(() => {

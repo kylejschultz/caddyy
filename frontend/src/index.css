@@ -1,3 +1,21 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Base theme styles */
+@layer base {
+  html {
+    /* Default to dark theme */
+    @apply bg-slate-950 text-white;
+  }
+  
+  /* Light theme overrides */
+  html.light {
+    @apply bg-white text-slate-900;
+  }
+  
+  /* Dark theme explicit */
+  html.dark {
+    @apply bg-slate-950 text-white;
+  }
+}

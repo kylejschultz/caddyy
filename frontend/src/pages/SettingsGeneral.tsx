@@ -83,7 +83,7 @@ export default function Settings() {
       <button
         onClick={handleReset}
         disabled={!isDirty}
-        className="flex items-center px-4 py-2 text-slate-300 bg-slate-700 rounded-md hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="flex items-center px-4 py-2 text-gray-600 dark:text-slate-300 bg-gray-200 dark:bg-slate-700 rounded-md hover:bg-gray-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         <RotateCcw className="w-4 h-4 mr-2" />
         Reset
@@ -108,7 +108,7 @@ export default function Settings() {
           description="Configure your Caddyy instance"
           tabs={settingsTabs}
         />
-        <div className="text-slate-400 px-6">Loading settings...</div>
+        <div className="text-gray-500 dark:text-slate-400 px-6">Loading settings...</div>
       </div>
     )
   }
@@ -126,9 +126,9 @@ export default function Settings() {
         {renderTabContent()}
         
         {isDirty && (
-          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
+          <div className="bg-yellow-100 dark:bg-yellow-500/10 border border-yellow-300 dark:border-yellow-500/20 rounded-lg p-4">
             <div className="flex items-center">
-              <div className="text-yellow-400 text-sm">
+              <div className="text-yellow-800 dark:text-yellow-400 text-sm">
                 ⚠️ You have unsaved changes. Don't forget to save!
               </div>
             </div>
@@ -142,36 +142,36 @@ export default function Settings() {
     switch (location.pathname) {
       case '/settings/users':
         return (
-          <div className="bg-slate-800 rounded-lg border border-slate-700">
-            <div className="p-6 border-b border-slate-700">
-              <h2 className="text-xl font-semibold text-white">User Management</h2>
-              <p className="text-slate-400 mt-1">Manage user accounts and permissions</p>
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
+            <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">User Management</h2>
+              <p className="text-gray-500 dark:text-slate-400 mt-1">Manage user accounts and permissions</p>
             </div>
             <div className="p-6">
-              <p className="text-slate-400">User management features coming soon...</p>
+              <p className="text-gray-500 dark:text-slate-400">User management features coming soon...</p>
             </div>
           </div>
         )
       
       case '/settings/security':
         return (
-          <div className="bg-slate-800 rounded-lg border border-slate-700">
-            <div className="p-6 border-b border-slate-700">
-              <h2 className="text-xl font-semibold text-white">Security Settings</h2>
-              <p className="text-slate-400 mt-1">Configure security and authentication options</p>
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
+            <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Security Settings</h2>
+              <p className="text-gray-500 dark:text-slate-400 mt-1">Configure security and authentication options</p>
             </div>
             <div className="p-6">
-              <p className="text-slate-400">Security settings coming soon...</p>
+              <p className="text-gray-500 dark:text-slate-400">Security settings coming soon...</p>
             </div>
           </div>
         )
       
       default: // /settings/general
         return (
-          <div className="bg-slate-800 rounded-lg border border-slate-700">
-            <div className="p-6 border-b border-slate-700">
-              <h2 className="text-xl font-semibold text-white">Application Settings</h2>
-              <p className="text-slate-400 mt-1">Basic configuration for your Caddyy instance</p>
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
+            <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Application Settings</h2>
+              <p className="text-gray-500 dark:text-slate-400 mt-1">Basic configuration for your Caddyy instance</p>
             </div>
             
             <div className="p-6 space-y-6">
