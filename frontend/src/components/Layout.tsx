@@ -11,7 +11,11 @@ import {
   User,
   Shield,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Library,
+  Cog,
+  Clock,
+  List
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -28,9 +32,33 @@ interface NavigationItem {
 
 const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/', icon: Home },
-  { name: 'Movies', href: '/movies', icon: Film },
-  { name: 'TV Shows', href: '/shows', icon: Tv },
-  { name: 'Downloads', href: '/downloads', icon: Download },
+  { 
+    name: 'Movies', 
+    href: '/movies', 
+    icon: Film,
+    children: [
+      { name: 'Collection', href: '/movies', icon: Library },
+      { name: 'Settings', href: '/movies/settings', icon: Cog },
+    ]
+  },
+  { 
+    name: 'TV Shows', 
+    href: '/shows', 
+    icon: Tv,
+    children: [
+      { name: 'Collection', href: '/shows', icon: Library },
+      { name: 'Settings', href: '/shows/settings', icon: Cog },
+    ]
+  },
+  { 
+    name: 'Monitor', 
+    href: '/monitor', 
+    icon: Download,
+    children: [
+      { name: 'Queue', href: '/monitor/queue', icon: Clock },
+      { name: 'History', href: '/monitor/history', icon: List },
+    ]
+  },
   { 
     name: 'Settings', 
     href: '/settings', 
@@ -49,11 +77,20 @@ export default function Layout({ children }: LayoutProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedItems, setExpandedItems] = useState<string[]>([]) 
 
-  // Auto-expand settings when on settings page
+  // Auto-expand navigation sections based on current path
   useEffect(() => {
-    if (location.pathname.startsWith('/settings')) {
+    const pathSegments = location.pathname.split('/').filter(Boolean)
+    const currentSection = pathSegments[0]
+    
+    let sectionToExpand = null
+    if (currentSection === 'movies') sectionToExpand = 'Movies'
+    else if (currentSection === 'shows') sectionToExpand = 'TV Shows'
+    else if (currentSection === 'monitor') sectionToExpand = 'Monitor'
+    else if (currentSection === 'settings') sectionToExpand = 'Settings'
+    
+    if (sectionToExpand) {
       setExpandedItems(prev => 
-        prev.includes('Settings') ? prev : [...prev, 'Settings']
+        prev.includes(sectionToExpand) ? prev : [...prev, sectionToExpand]
       )
     }
   }, [location.pathname])
@@ -86,7 +123,13 @@ export default function Layout({ children }: LayoutProps) {
           <div>
             <div
               onClick={() => {
-                if (item.name === 'Settings') {
+                if (item.name === 'Movies') {
+                  navigate('/movies')
+                } else if (item.name === 'TV Shows') {
+                  navigate('/shows')
+                } else if (item.name === 'Monitor') {
+                  navigate('/monitor/queue')
+                } else if (item.name === 'Settings') {
                   navigate('/settings/general')
                 } else {
                   toggleExpand()
