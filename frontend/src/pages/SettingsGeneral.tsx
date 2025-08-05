@@ -10,6 +10,7 @@ interface AppConfig {
   authentication: string
   timezone: string
   date_time_format: string
+  tmdb_api_key: string
 }
 
 export default function Settings() {
@@ -233,6 +234,31 @@ export default function Settings() {
                   <option value="YYYY-MM-DD hh:mm A">2024-03-15 02:30 PM</option>
                   <option value="MMM DD, YYYY HH:mm">Mar 15, 2024 14:30</option>
                 </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  TMDB API Key
+                </label>
+                <input
+                  type="password"
+                  value={formData.tmdb_api_key}
+                  onChange={(e) => handleInputChange('tmdb_api_key', e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                  placeholder="Enter your TMDB API key"
+                />
+                <p className="text-slate-500 text-xs mt-1">
+                  Get your API key from{' '}
+                  <a 
+                    href="https://www.themoviedb.org/settings/api" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 underline"
+                  >
+                    TMDB Settings
+                  </a>
+                  . Required for movie and TV show metadata.
+                </p>
               </div>
             </div>
           </div>

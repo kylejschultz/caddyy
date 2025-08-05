@@ -6,6 +6,7 @@ general:
   debug_mode: false
   log_level: INFO
   timezone: America/Los_Angeles
+  tmdb_api_key: ""  # Get from https://www.themoviedb.org/settings/api
 
 paths:
   # Media path configurations

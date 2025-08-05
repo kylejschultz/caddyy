@@ -7,8 +7,6 @@ import asyncio
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 
-# Embedded TMDB API key for zero-config setup
-DEFAULT_TMDB_API_KEY = "ffd06157c00e7a9fb2f147d90b2c6048"
 TMDB_BASE_URL = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
@@ -46,9 +44,22 @@ class TVResult(MediaResult):
 class TMDBService:
     """Service for interacting with TMDB API"""
     
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or DEFAULT_TMDB_API_KEY
+    def __init__(self):
         self.client = httpx.AsyncClient()
+    
+    def _get_api_key(self) -> Optional[str]:
+        """Get API key from YAML config"""
+        try:
+            from backend.core.yaml_config import config_manager
+            config = config_manager.get_config()
+            api_key = config.general.tmdb_api_key.strip() if config.general.tmdb_api_key else None
+            return api_key if api_key else None
+        except Exception:
+            return None
+    
+    def _is_configured(self) -> bool:
+        """Check if TMDB API key is configured"""
+        return self._get_api_key() is not None
     
     async def search(self, query: str, media_type: Optional[str] = None) -> List[MediaResult]:
         """
@@ -61,6 +72,9 @@ class TMDBService:
         Returns:
             List of MediaResult objects
         """
+        if not self._is_configured():
+            return []
+        
         results = []
         
         if media_type is None or media_type == "movie":
@@ -81,7 +95,7 @@ class TMDBService:
         """Search for movies"""
         url = f"{TMDB_BASE_URL}/search/movie"
         params = {
-            "api_key": self.api_key,
+            "api_key": self._get_api_key(),
             "query": query,
             "page": 1
         }
@@ -118,7 +132,7 @@ class TMDBService:
         """Search for TV shows"""
         url = f"{TMDB_BASE_URL}/search/tv"
         params = {
-            "api_key": self.api_key,
+            "api_key": self._get_api_key(),
             "query": query,
             "page": 1
         }
@@ -169,9 +183,12 @@ class TMDBService:
     
     async def get_movie_details(self, movie_id: int) -> Optional[Dict[str, Any]]:
         """Get detailed information about a specific movie"""
+        if not self._is_configured():
+            return None
+            
         url = f"{TMDB_BASE_URL}/movie/{movie_id}"
         params = {
-            "api_key": self.api_key,
+            "api_key": self._get_api_key(),
             "append_to_response": "credits"
         }
         
@@ -222,9 +239,12 @@ class TMDBService:
     
     async def get_tv_details(self, tv_id: int) -> Optional[Dict[str, Any]]:
         """Get detailed information about a specific TV show"""
+        if not self._is_configured():
+            return None
+            
         url = f"{TMDB_BASE_URL}/tv/{tv_id}"
         params = {
-            "api_key": self.api_key,
+            "api_key": self._get_api_key(),
             "append_to_response": "credits"
         }
         
@@ -239,9 +259,12 @@ class TMDBService:
     
     async def get_tv_season_details(self, tv_id: int, season_number: int) -> Optional[Dict[str, Any]]:
         """Get detailed information about a specific season of a TV show"""
+        if not self._is_configured():
+            return None
+            
         url = f"{TMDB_BASE_URL}/tv/{tv_id}/season/{season_number}"
         params = {
-            "api_key": self.api_key
+            "api_key": self._get_api_key()
         }
         
         try:

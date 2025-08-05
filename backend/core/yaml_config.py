@@ -15,6 +15,7 @@ class GeneralConfig(BaseModel):
     timezone: str = "America/Los_Angeles"
     date_time_format: str = "YYYY-MM-DD HH:mm:ss"
     debug_mode: bool = False
+    tmdb_api_key: str = ""
 
 
 class MediaDirectory(BaseModel):
