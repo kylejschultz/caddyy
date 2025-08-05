@@ -4,13 +4,11 @@ import { FileBrowser } from '../components/FileBrowser';
 import { Plus, Trash2, Folder, X, Download, Edit3, Check, X as XIcon, ChevronDown, Film, Monitor, Filter } from 'lucide-react';
 
 interface MediaPath {
-  id: number;
+  index?: number; // For YAML config (array index)
   media_type: 'movies' | 'tv' | 'downloads';
   path: string;
   name: string;
   enabled: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
 export default function SettingsPaths() {
@@ -21,7 +19,7 @@ export default function SettingsPaths() {
   const [loading, setLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editModalData, setEditModalData] = useState<{
-    id?: number;
+    index?: number;
     media_type: 'movies' | 'tv' | 'downloads';
     name: string;
     path: string;
@@ -50,15 +48,20 @@ export default function SettingsPaths() {
     };
   }, [showAddDropdown, showFilterDropdown]);
 
-  // Load media paths from backend
+  // Load media paths from YAML config
   useEffect(() => {
     const fetchMediaPaths = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/media-paths/');
+        const response = await fetch('/api/config/paths/media-directories');
         if (response.ok) {
           const paths = await response.json();
-          setMediaPaths(paths);
+          // Add index to each path for editing/deleting
+          const pathsWithIndex = paths.map((path: MediaPath, index: number) => ({
+            ...path,
+            index
+          }));
+          setMediaPaths(pathsWithIndex);
         } else {
           console.error('Failed to fetch media paths');
         }
@@ -83,7 +86,7 @@ export default function SettingsPaths() {
 
   const handleEditPath = (path: MediaPath) => {
     setEditModalData({
-      id: path.id,
+      index: path.index,
       media_type: path.media_type,
       name: path.name,
       path: path.path

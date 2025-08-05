@@ -8,12 +8,44 @@ from pydantic import BaseModel
 from typing import Any, Dict
 
 
-class AppConfig(BaseModel):
-    """Basic application configuration"""
+class GeneralConfig(BaseModel):
+    """General application configuration"""
     log_level: str = "INFO"
     authentication: str = "None"
     timezone: str = "America/Los_Angeles"
     date_time_format: str = "YYYY-MM-DD HH:mm:ss"
+    debug_mode: bool = False
+
+
+class MediaDirectory(BaseModel):
+    """Media directory configuration"""
+    name: str
+    path: str
+    media_type: str
+    enabled: bool = True
+
+
+class PathsConfig(BaseModel):
+    """Paths configuration"""
+    media_directories: list[MediaDirectory] = []
+
+
+class UsersConfig(BaseModel):
+    """Users configuration (future)"""
+    pass
+
+
+class SecurityConfig(BaseModel):
+    """Security configuration (future)"""
+    pass
+
+
+class AppConfig(BaseModel):
+    """Complete application configuration"""
+    general: GeneralConfig = GeneralConfig()
+    paths: PathsConfig = PathsConfig()
+    users: UsersConfig = UsersConfig()
+    security: SecurityConfig = SecurityConfig()
     
     class Config:
         extra = "allow"
@@ -46,7 +78,8 @@ class ConfigManager:
         """Save configuration to YAML file"""
         try:
             with open(self.config_path, "w") as file:
-                yaml.safe_dump(config.dict(), file, default_flow_style=False)
+                file.write("# Caddyy Configuration\n\n")
+                yaml.safe_dump(config.dict(), file, default_flow_style=False, sort_keys=False)
         except Exception as e:
             print(f"Error saving config: {e}")
     

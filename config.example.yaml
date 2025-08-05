@@ -1,7 +1,35 @@
-app_description: A Modern Media Management Solution
-app_name: My Caddyy Instance
-authentication: None
-date_time_format: YYYY-MM-DD HH:mm:ss
-debug_mode: false
-log_level: INFO
-timezone: America/Los_Angeles
+# Caddyy Configuration
+
+general:
+  authentication: None
+  date_time_format: YYYY-MM-DD HH:mm:ss
+  debug_mode: false
+  log_level: INFO
+  timezone: America/Los_Angeles
+
+paths:
+  # Media path configurations
+  # These can be managed here or through the web UI
+  media_directories:
+    - name: "Movies Library"
+      path: "/media/movies"
+      media_type: "movies"
+      enabled: true
+    - name: "TV Shows Library"
+      path: "/media/tv"
+      media_type: "tv"
+      enabled: true
+    - name: "Downloads"
+      path: "/media/downloads"
+      media_type: "downloads"
+      enabled: true
+
+users:
+  # User management settings (future)
+  # authentication_method: local
+  # default_permissions: viewer
+
+security:
+  # Security settings (future)
+  # api_key_required: false
+  # session_timeout: 3600
