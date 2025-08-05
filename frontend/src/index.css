@@ -4,18 +4,13 @@
 
 /* Base theme styles */
 @layer base {
-  html {
-    /* Default to dark theme */
-    @apply bg-slate-950 text-white;
+  html, body {
+    /* Default light theme */
+    @apply bg-gray-50 text-gray-900;
   }
   
-  /* Light theme overrides */
-  html.light {
-    @apply bg-white text-slate-900;
-  }
-  
-  /* Dark theme explicit */
-  html.dark {
+  /* Dark theme overrides */
+  html.dark, html.dark body {
     @apply bg-slate-950 text-white;
   }
 }

@@ -16,9 +16,9 @@ export default function Movies() {
       />
       
       <div className="p-6">
-        <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-semibold text-white mb-4">Your Movies</h2>
-          <p className="text-slate-400">No movies in your collection yet.</p>
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-6 border border-gray-200 dark:border-slate-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Your Movies</h2>
+          <p className="text-gray-500 dark:text-slate-400">No movies in your collection yet.</p>
         </div>
       </div>
     </div>

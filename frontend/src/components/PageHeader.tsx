@@ -20,13 +20,13 @@ export default function PageHeader({ title, description, tabs, actions, hideTabs
   const location = useLocation()
 
   return (
-    <div className="sticky top-0 z-20 border-b border-slate-800 bg-slate-900">
+    <div className="sticky top-0 z-20 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">{title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{title}</h1>
             {description && (
-              <p className="text-slate-400 mt-1">{description}</p>
+              <p className="text-gray-500 dark:text-slate-400 mt-1">{description}</p>
             )}
           </div>
           {actions && (
@@ -38,7 +38,7 @@ export default function PageHeader({ title, description, tabs, actions, hideTabs
         
         {tabs && tabs.length > 0 && !hideTabs && (
           <div className="mt-6">
-            <nav className="flex space-x-1 bg-slate-800/50 rounded-lg p-1" aria-label="Tabs">
+            <nav className="flex space-x-1 bg-gray-100 dark:bg-slate-800/50 rounded-lg p-1" aria-label="Tabs">
               {tabs.map((tab) => {
                 // Handle both path-only and path+search matching
                 const currentUrl = `${location.pathname}${location.search}`
@@ -52,7 +52,7 @@ export default function PageHeader({ title, description, tabs, actions, hideTabs
                       'flex items-center px-4 py-2.5 rounded-md font-medium text-sm transition-all duration-200',
                       isActive
                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                        : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-700/50'
                     )}
                   >
                     {tab.icon && (

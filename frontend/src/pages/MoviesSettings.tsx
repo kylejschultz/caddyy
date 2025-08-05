@@ -53,10 +53,10 @@ export default function MoviesSettings() {
     return (
       <div className="p-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-slate-800 rounded w-48 mb-6"></div>
+          <div className="h-8 bg-gray-200 dark:bg-slate-800 rounded w-48 mb-6"></div>
           <div className="space-y-4">
-            <div className="h-4 bg-slate-800 rounded w-32"></div>
-            <div className="h-10 bg-slate-800 rounded"></div>
+            <div className="h-4 bg-gray-200 dark:bg-slate-800 rounded w-32"></div>
+            <div className="h-10 bg-gray-200 dark:bg-slate-800 rounded"></div>
           </div>
         </div>
       </div>
@@ -67,20 +67,20 @@ export default function MoviesSettings() {
     <div className="p-6 max-w-4xl">
       <div className="flex items-center space-x-3 mb-6">
         <Film className="w-8 h-8 text-blue-500" />
-        <h1 className="text-2xl font-bold text-white">Movie Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Movie Settings</h1>
       </div>
 
       <div className="space-y-8">
         {/* Paths Section */}
-        <div className="bg-slate-800 rounded-lg p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-6 border border-gray-200 dark:border-slate-700">
           <div className="flex items-center space-x-2 mb-4">
-            <Folder className="w-5 h-5 text-slate-400" />
-            <h2 className="text-lg font-semibold text-white">Paths</h2>
+            <Folder className="w-5 h-5 text-gray-500 dark:text-slate-400" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Paths</h2>
           </div>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Movies Library Path
               </label>
               <input
@@ -90,12 +90,12 @@ export default function MoviesSettings() {
                   ...prev,
                   paths: { ...prev.paths, movies: e.target.value }
                 }))}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Downloads Path
               </label>
               <input
@@ -105,12 +105,12 @@ export default function MoviesSettings() {
                   ...prev,
                   paths: { ...prev.paths, downloads: e.target.value }
                 }))}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Completed Downloads Path
               </label>
               <input
@@ -120,22 +120,22 @@ export default function MoviesSettings() {
                   ...prev,
                   paths: { ...prev.paths, completed: e.target.value }
                 }))}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               />
             </div>
           </div>
         </div>
 
         {/* Quality Section */}
-        <div className="bg-slate-800 rounded-lg p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-6 border border-gray-200 dark:border-slate-700">
           <div className="flex items-center space-x-2 mb-4">
-            <HardDrive className="w-5 h-5 text-slate-400" />
-            <h2 className="text-lg font-semibold text-white">Quality</h2>
+            <HardDrive className="w-5 h-5 text-gray-500 dark:text-slate-400" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Quality</h2>
           </div>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Quality Cutoff
               </label>
               <select
@@ -144,7 +144,7 @@ export default function MoviesSettings() {
                   ...prev,
                   quality: { ...prev.quality, cutoff: e.target.value }
                 }))}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               >
                 <option value="720p">720p</option>
                 <option value="1080p">1080p</option>
@@ -155,15 +155,15 @@ export default function MoviesSettings() {
         </div>
 
         {/* Naming Section */}
-        <div className="bg-slate-800 rounded-lg p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-6 border border-gray-200 dark:border-slate-700">
           <div className="flex items-center space-x-2 mb-4">
-            <SettingsIcon className="w-5 h-5 text-slate-400" />
-            <h2 className="text-lg font-semibold text-white">File Naming</h2>
+            <SettingsIcon className="w-5 h-5 text-gray-500 dark:text-slate-400" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">File Naming</h2>
           </div>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 Naming Format
               </label>
               <input
@@ -173,7 +173,7 @@ export default function MoviesSettings() {
                   ...prev,
                   naming: { ...prev.naming, format: e.target.value }
                 }))}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               />
             </div>
             
@@ -186,9 +186,9 @@ export default function MoviesSettings() {
                   ...prev,
                   naming: { ...prev.naming, replaceSpaces: e.target.checked }
                 }))}
-                className="w-4 h-4 text-blue-600 bg-slate-700 border-slate-600 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 rounded focus:ring-blue-500"
               />
-              <label htmlFor="replaceSpaces" className="ml-2 text-sm text-slate-300">
+              <label htmlFor="replaceSpaces" className="ml-2 text-sm text-gray-700 dark:text-slate-300">
                 Replace spaces with dots
               </label>
             </div>
