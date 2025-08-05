@@ -2,7 +2,7 @@
 Search API endpoints
 """
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 from typing import List, Optional
 
 from backend.services.tmdb_service import tmdb_service, MediaResult
@@ -19,6 +19,17 @@ async def search_media(
     if not q.strip():
         return []
     
+    # Check if TMDB API key is configured
+    if not tmdb_service._is_configured():
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "TMDB API key is not configured. Please add your TMDB API key to enable search functionality.",
+                "link": "/settings/general",
+                "linkText": "Go to General Settings"
+            }
+        )
+    
     results = await tmdb_service.search(q.strip(), type)
     return results
 
@@ -31,6 +42,17 @@ async def search_movies(
     if not q.strip():
         return []
     
+    # Check if TMDB API key is configured
+    if not tmdb_service._is_configured():
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "TMDB API key is not configured. Please add your TMDB API key to enable search functionality.",
+                "link": "/settings/general",
+                "linkText": "Go to General Settings"
+            }
+        )
+    
     results = await tmdb_service.search(q.strip(), "movie")
     return results
 
@@ -42,6 +64,17 @@ async def search_tv(
     """Search for TV shows only"""
     if not q.strip():
         return []
+    
+    # Check if TMDB API key is configured
+    if not tmdb_service._is_configured():
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "TMDB API key is not configured. Please add your TMDB API key to enable search functionality.",
+                "link": "/settings/general",
+                "linkText": "Go to General Settings"
+            }
+        )
     
     results = await tmdb_service.search(q.strip(), "tv")
     return results

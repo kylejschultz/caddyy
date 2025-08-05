@@ -119,6 +119,11 @@ export default function Search() {
   }
 
   if (error) {
+    // Check if it's our structured error response
+    const isAxiosError = axios.isAxiosError(error)
+    const errorDetail = isAxiosError && error.response?.data?.detail
+    const isStructuredError = errorDetail && typeof errorDetail === 'object' && errorDetail.message
+    
     return (
       <>
         <PageHeader 
@@ -126,10 +131,22 @@ export default function Search() {
           description={`Searched for "${query}"`} 
         />
         <div className="p-6">
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6">
-            <div className="text-red-400">
-              <h3 className="font-semibold mb-2">Search Error</h3>
-              <p>Unable to search at this time. Please try again later.</p>
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-6">
+            <div className="text-yellow-400">
+              <h3 className="font-semibold mb-2">
+                {isStructuredError ? 'Configuration Required' : 'Search Error'}
+              </h3>
+              <p className="mb-4">
+                {isStructuredError ? errorDetail.message : 'Unable to search at this time. Please try again later.'}
+              </p>
+              {isStructuredError && errorDetail.link && (
+                <button
+                  onClick={() => navigate(errorDetail.link)}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-md font-medium transition-colors"
+                >
+                  {errorDetail.linkText || 'Go to Settings'}
+                </button>
+              )}
             </div>
           </div>
         </div>
