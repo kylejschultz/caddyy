@@ -13,9 +13,10 @@ interface PageHeaderProps {
   description?: string
   tabs?: TabItem[]
   actions?: ReactNode
+  hideTabs?: boolean  // New prop to hide horizontal tabs when using sidebar nav
 }
 
-export default function PageHeader({ title, description, tabs, actions }: PageHeaderProps) {
+export default function PageHeader({ title, description, tabs, actions, hideTabs }: PageHeaderProps) {
   const location = useLocation()
 
   return (
@@ -35,7 +36,7 @@ export default function PageHeader({ title, description, tabs, actions }: PageHe
           )}
         </div>
         
-        {tabs && tabs.length > 0 && (
+        {tabs && tabs.length > 0 && !hideTabs && (
           <div className="mt-6">
             <nav className="flex space-x-1 bg-slate-800/50 rounded-lg p-1" aria-label="Tabs">
               {tabs.map((tab) => {

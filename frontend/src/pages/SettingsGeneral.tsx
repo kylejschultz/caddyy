@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom'
 import { Save, RotateCcw, Settings as SettingsIcon, User, Shield, Folder as FolderIcon } from 'lucide-react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
+import SidebarNavigation from '../components/SidebarNavigation'
 
 interface AppConfig {
   log_level: string
@@ -62,7 +63,6 @@ export default function Settings() {
 
   const settingsTabs = [
     { name: 'General', href: '/settings/general', icon: SettingsIcon },
-    { name: 'Paths', href: '/settings/paths', icon: FolderIcon },
     { name: 'Users', href: '/settings/users', icon: User },
     { name: 'Security', href: '/settings/security', icon: Shield },
   ]
@@ -107,8 +107,8 @@ export default function Settings() {
       <PageHeader 
         title="Settings" 
         description="Configure your Caddyy instance"
-        tabs={settingsTabs}
         actions={headerActions}
+        hideTabs={true}
       />
 
       <div className="p-6 space-y-6">

@@ -22,13 +22,26 @@ class MediaDirectory(BaseModel):
     """Media directory configuration"""
     name: str
     path: str
-    media_type: str
     enabled: bool = True
 
 
-class PathsConfig(BaseModel):
-    """Paths configuration"""
-    media_directories: list[MediaDirectory] = []
+class MoviesConfig(BaseModel):
+    """Movies configuration"""
+    library_paths: list[MediaDirectory] = []
+    download_paths: list[MediaDirectory] = []
+    # Future movie-specific settings can go here
+    quality_profiles: list[str] = ["HD-1080p", "HD-720p", "SD"]
+    auto_search: bool = True
+
+
+class TVConfig(BaseModel):
+    """TV Shows configuration"""
+    library_paths: list[MediaDirectory] = []
+    download_paths: list[MediaDirectory] = []
+    # Future TV-specific settings can go here
+    quality_profiles: list[str] = ["HD-1080p", "HD-720p", "SD"]
+    auto_search: bool = True
+    season_folder_format: str = "Season {season:02d}"
 
 
 class UsersConfig(BaseModel):
@@ -44,7 +57,8 @@ class SecurityConfig(BaseModel):
 class AppConfig(BaseModel):
     """Complete application configuration"""
     general: GeneralConfig = GeneralConfig()
-    paths: PathsConfig = PathsConfig()
+    movies: MoviesConfig = MoviesConfig()
+    tv: TVConfig = TVConfig()
     users: UsersConfig = UsersConfig()
     security: SecurityConfig = SecurityConfig()
     

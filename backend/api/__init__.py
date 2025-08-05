@@ -11,7 +11,8 @@ from backend.api.movies import router as movies_router
 from backend.api.tv import router as tv_router
 from backend.api.filesystem import router as filesystem_router
 from backend.api.media_paths import router as media_paths_router
-from backend.api.config_paths import router as config_paths_router
+from backend.routers.config.movies import router as movies_config_router
+from backend.routers.config.tv import router as tv_config_router
 
 router = APIRouter()
 
@@ -22,4 +23,5 @@ router.include_router(movies_router, prefix="/movies", tags=["movies"])
 router.include_router(tv_router, prefix="/tv", tags=["tv"])
 router.include_router(filesystem_router, prefix="/filesystem", tags=["filesystem"])
 router.include_router(media_paths_router, prefix="/media-paths", tags=["media-paths"])
-router.include_router(config_paths_router, prefix="/config/paths", tags=["config-paths"])
+router.include_router(movies_config_router, prefix="/config/movies", tags=["movies-config"])
+router.include_router(tv_config_router, prefix="/config/tv", tags=["tv-config"])

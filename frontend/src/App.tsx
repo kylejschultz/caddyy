@@ -5,7 +5,6 @@ import Movies from './pages/Movies'
 import Shows from './pages/Shows'
 import Downloads from './pages/Downloads'
 import Settings from './pages/SettingsGeneral'
-import SettingsPaths from './pages/SettingsPaths'
 import Search from './pages/Search'
 import MovieDetail from './pages/MovieDetail'
 import TVShowDetail from './pages/TVShowDetail'
@@ -29,7 +28,6 @@ function App() {
           <Route path="/tv/:id" element={<TVShowDetail />} />
           <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
           <Route path="/settings/general" element={<Settings />} />
-          <Route path="/settings/paths" element={<SettingsPaths />} />
           <Route path="/settings/users" element={<Settings />} />
           <Route path="/settings/security" element={<Settings />} />
         </Routes>

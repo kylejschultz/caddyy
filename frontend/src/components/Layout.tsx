@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { 
   Home, 
@@ -7,7 +7,11 @@ import {
   Download, 
   Settings,
   Activity,
-  Search
+  Search,
+  User,
+  Shield,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -27,13 +31,32 @@ const navigation: NavigationItem[] = [
   { name: 'Movies', href: '/movies', icon: Film },
   { name: 'TV Shows', href: '/shows', icon: Tv },
   { name: 'Downloads', href: '/downloads', icon: Download },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { 
+    name: 'Settings', 
+    href: '/settings', 
+    icon: Settings,
+    children: [
+      { name: 'General', href: '/settings/general', icon: Settings },
+      { name: 'Users', href: '/settings/users', icon: User },
+      { name: 'Security', href: '/settings/security', icon: Shield },
+    ]
+  },
 ]
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [expandedItems, setExpandedItems] = useState<string[]>([]) 
+
+  // Auto-expand settings when on settings page
+  useEffect(() => {
+    if (location.pathname.startsWith('/settings')) {
+      setExpandedItems(prev => 
+        prev.includes('Settings') ? prev : [...prev, 'Settings']
+      )
+    }
+  }, [location.pathname])
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
@@ -47,25 +70,89 @@ export default function Layout({ children }: LayoutProps) {
       ? location.pathname === '/' 
       : location.pathname.startsWith(item.href!)
 
+    const isExpanded = expandedItems.includes(item.name)
+
+    const toggleExpand = () => {
+      setExpandedItems(prev =>
+        prev.includes(item.name)
+          ? prev.filter(n => n !== item.name)
+          : [...prev, item.name]
+      )
+    }
+
     return (
-      <li key={item.name}>
-        <Link
-          to={item.href!}
-          onClick={() => {
-            if (!location.pathname.startsWith(item.href!)) {
-              setSearchQuery('')
-            }
-          }}
-          className={clsx(
-            'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
-            isActive
-              ? 'bg-blue-600 text-white'
-              : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-          )}
-        >
-          <item.icon className="w-5 h-5 mr-3" />
-          {item.name}
-        </Link>
+      <li key={item.name} className="space-y-1">
+        {item.children ? (
+          <div>
+            <div
+              onClick={() => {
+                if (item.name === 'Settings') {
+                  navigate('/settings/general')
+                } else {
+                  toggleExpand()
+                }
+              }}
+              className={clsx(
+                'flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors',
+                location.pathname.startsWith(item.href!)
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              )}
+            >
+              <div className="flex items-center">
+                <item.icon className="w-5 h-5 mr-3" />
+                {item.name}
+              </div>
+              {isExpanded ? <ChevronDown /> : <ChevronRight />}
+            </div>
+            {isExpanded && item.children && (
+              <ul className="mt-1 space-y-1 ml-3 border-l border-slate-700">
+                {item.children.map((child) => (
+                  <li key={child.name}>
+                    <Link
+                      to={child.href!}
+                      onClick={() => {
+                        if (!location.pathname.startsWith(child.href!)) {
+                          setSearchQuery('')
+                        }
+                      }}
+                      className={clsx(
+                        'flex items-center pl-4 pr-3 py-2 text-sm transition-colors rounded-r-md',
+                        location.pathname === child.href
+                          ? 'bg-blue-600/30 text-white font-semibold border-l-2 border-blue-400'
+                          : 'text-slate-400 hover:bg-slate-800/40 hover:text-slate-200 font-normal'
+                      )}
+                    >
+                      <child.icon className={clsx(
+                        'w-4 h-4 mr-3',
+                        location.pathname === child.href ? 'text-blue-300' : ''
+                      )} />
+                      {child.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : (
+          <Link
+            to={item.href!}
+            onClick={() => {
+              if (!location.pathname.startsWith(item.href!)) {
+                setSearchQuery('')
+              }
+            }}
+            className={clsx(
+              'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+              isActive
+                ? 'bg-blue-600 text-white'
+                : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+            )}
+          >
+            <item.icon className="w-5 h-5 mr-3" />
+            {item.name}
+          </Link>
+        )}
       </li>
     )
   }
