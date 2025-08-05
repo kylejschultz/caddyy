@@ -176,7 +176,7 @@ export default function Settings() {
             
             <div className="p-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Theme
                 </label>
                 <div className="flex items-center gap-2">
@@ -188,7 +188,7 @@ export default function Settings() {
                       className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors ${
                         formData.theme === t
                           ? 'bg-blue-600 text-white'
-                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-600'
                       }`}>
                       {t === 'system' && <Monitor className="w-4 h-4" />}
                       {t === 'light' && <Sun className="w-4 h-4" />}
@@ -197,19 +197,19 @@ export default function Settings() {
                     </button>
                   ))}
                 </div>
-                <p className="text-slate-500 text-xs mt-1">
+                <p className="text-gray-500 dark:text-slate-500 text-xs mt-1">
                   Choose how the interface appears. System matches your device preference.
                 </p>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Log Level
                 </label>
                 <select
                   value={formData.log_level}
                   onChange={(e) => handleInputChange('log_level', e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                   <option value="DEBUG">Debug</option>
                   <option value="INFO">Info</option>
@@ -220,30 +220,30 @@ export default function Settings() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Authentication
                 </label>
                 <select
                   value={formData.authentication}
                   onChange={(e) => handleInputChange('authentication', e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                   <option value="None">None</option>
                   <option value="Basic" disabled>Basic (Coming Soon)</option>
                 </select>
-                <p className="text-slate-500 text-xs mt-1">
+                <p className="text-gray-500 dark:text-slate-500 text-xs mt-1">
                   Basic authentication will be available in a future update
                 </p>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Timezone
                 </label>
                 <select
                   value={formData.timezone}
                   onChange={(e) => handleInputChange('timezone', e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                   <option value="UTC">UTC</option>
                   <option value="America/New_York">Eastern Time</option>
@@ -258,13 +258,13 @@ export default function Settings() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   Date/Time Format
                 </label>
                 <select
                   value={formData.date_time_format}
                   onChange={(e) => handleInputChange('date_time_format', e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
                   <option value="YYYY-MM-DD HH:mm:ss">2024-03-15 14:30:00</option>
                   <option value="MM/DD/YYYY hh:mm A">03/15/2024 02:30 PM</option>
@@ -275,23 +275,23 @@ export default function Settings() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   TMDB API Key
                 </label>
                 <input
                   type="password"
                   value={formData.tmdb_api_key}
                   onChange={(e) => handleInputChange('tmdb_api_key', e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors font-mono text-sm"
                   placeholder="Enter your TMDB API key"
                 />
-                <p className="text-slate-500 text-xs mt-1">
+                <p className="text-gray-500 dark:text-slate-500 text-xs mt-1">
                   Get your API key from{' '}
                   <a 
                     href="https://www.themoviedb.org/settings/api" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-blue-400 hover:text-blue-300 underline"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline"
                   >
                     TMDB Settings
                   </a>
