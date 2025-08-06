@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  caddyy:
+    build: .
+    container_name: caddyy
+    ports:
+      - "8000:8000"
+    environment:
+      # Server configuration only
+      HOST: 0.0.0.0
+      PORT: 8000
+      DEBUG: false
+      WORKERS: 1
+    
+    volumes:
+      # Application data (database, config, logs)
+      - /path/to/appdata/caddyy:/caddyy/app/
+      
+      # Media directories - update these paths to match your local setup
+      - /path/to/media/movies:/caddyy/movies
+      - /path/to/media/tvshows:/caddyy/tvshows
+      - /path/to/media/downloads:/caddyy/downloads
+    
+    restart: unless-stopped
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "./start.sh", "health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  default:
+    name: caddyy_network

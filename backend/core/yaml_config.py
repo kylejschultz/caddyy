@@ -8,6 +8,13 @@ from pydantic import BaseModel
 from typing import Any, Dict
 
 
+class MediaDirectory(BaseModel):
+    """Media directory configuration"""
+    name: str
+    path: str
+    enabled: bool = True
+
+
 class GeneralConfig(BaseModel):
     """General application configuration"""
     log_level: str = "INFO"
@@ -17,19 +24,12 @@ class GeneralConfig(BaseModel):
     debug_mode: bool = False
     tmdb_api_key: str = ""
     theme: str = "system"  # Options: system, light, dark
-
-
-class MediaDirectory(BaseModel):
-    """Media directory configuration"""
-    name: str
-    path: str
-    enabled: bool = True
+    download_paths: list[MediaDirectory] = []
 
 
 class MoviesConfig(BaseModel):
     """Movies configuration"""
     library_paths: list[MediaDirectory] = []
-    download_paths: list[MediaDirectory] = []
     # Future movie-specific settings can go here
     quality_profiles: list[str] = ["HD-1080p", "HD-720p", "SD"]
     auto_search: bool = True
@@ -38,7 +38,6 @@ class MoviesConfig(BaseModel):
 class TVConfig(BaseModel):
     """TV Shows configuration"""
     library_paths: list[MediaDirectory] = []
-    download_paths: list[MediaDirectory] = []
     # Future TV-specific settings can go here
     quality_profiles: list[str] = ["HD-1080p", "HD-720p", "SD"]
     auto_search: bool = True

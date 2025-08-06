@@ -19,6 +19,7 @@ async def init_db() -> None:
     """Initialize database tables"""
     # Import models to ensure they're registered with Base
     from backend.models import MediaPath  # noqa: F401
+    from backend.models.collection import Movie, TVShow, Season, Episode  # noqa: F401
     
     Base.metadata.create_all(bind=engine)
 

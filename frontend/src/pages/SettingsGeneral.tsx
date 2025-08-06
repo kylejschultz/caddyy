@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
-import { Save, RotateCcw, Settings as SettingsIcon, User, Shield, Folder as FolderIcon, Sun, Moon, Monitor } from 'lucide-react'
+import { Save, RotateCcw, Settings as SettingsIcon, User, Shield, Folder as FolderIcon, Sun, Moon, Monitor, Plus, Trash2 } from 'lucide-react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
 import SidebarNavigation from '../components/SidebarNavigation'
+import PathInput from '../components/PathInput'
 import { useTheme, Theme } from '../contexts/ThemeContext'
+import { validatePath } from '../utils/pathValidation'
 
 interface AppConfig {
   log_level: string
@@ -14,14 +16,25 @@ interface AppConfig {
   date_time_format: string
   tmdb_api_key: string
   theme: Theme
+  download_paths: MediaDirectory[]
+}
+
+interface MediaDirectory {
+  name: string
+  path: string
+  enabled: boolean
 }
 
 export default function Settings() {
   const location = useLocation()
   const queryClient = useQueryClient()
   const { theme, setTheme } = useTheme()
-  const [isDirty, setIsDirty] = useState(false)
   const [formData, setFormData] = useState<AppConfig | null>(null)
+  const [isAddingDownloadPath, setIsAddingDownloadPath] = useState(false)
+  const [newDownloadPath, setNewDownloadPath] = useState({ name: '', path: '' })
+  const [changedFields, setChangedFields] = useState<Set<string>>(new Set())
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [validatingFields, setValidatingFields] = useState<Set<string>>(new Set())
 
   const { data: settings, isLoading } = useQuery<AppConfig>({
     queryKey: ['settings'],
@@ -43,16 +56,49 @@ export default function Settings() {
       axios.put('/api/settings/', updates).then(res => res.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] })
-      setIsDirty(false)
+      setChangedFields(new Set())
+      setFieldErrors({})
     }
   })
 
+  // Download paths mutations
+  const addDownloadPathMutation = useMutation({
+    mutationFn: (directory: { name: string; path: string; enabled: boolean }) => 
+      axios.post('/api/settings/download-paths', directory).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['settings'])
+      setNewDownloadPath({ name: '', path: '' })
+      setIsAddingDownloadPath(false)
+    },
+  })
+
+  const deleteDownloadPathMutation = useMutation({
+    mutationFn: (index: number) => 
+      axios.delete(`/api/settings/download-paths/${index}`).then(res => res.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['settings'])
+    },
+  })
+
+
   const handleInputChange = (field: keyof AppConfig, value: string | boolean) => {
-    if (!formData) return
+    if (!formData || !settings) return
     
+    const fieldKey = String(field)
     const newData = { ...formData, [field]: value }
     setFormData(newData)
-    setIsDirty(JSON.stringify(newData) !== JSON.stringify(settings))
+    
+    // Mark field as changed if value differs from original
+    const originalValue = settings[field]
+    if (JSON.stringify(originalValue) !== JSON.stringify(value)) {
+      setChangedFields(prev => new Set([...prev, fieldKey]))
+    } else {
+      setChangedFields(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(fieldKey)
+        return newSet
+      })
+    }
     
     // Update theme context immediately when theme changes
     if (field === 'theme') {
@@ -61,16 +107,83 @@ export default function Settings() {
   }
 
   const handleSave = () => {
-    if (!formData || !settings) return
+    if (!formData || changedFields.size === 0) return
     updateMutation.mutate(formData)
   }
 
   const handleReset = () => {
     if (settings) {
       setFormData(settings)
-      setIsDirty(false)
+      setChangedFields(new Set())
+      setFieldErrors({})
     }
   }
+
+  const handleAddDownloadPath = () => {
+    if (newDownloadPath.name.trim() && newDownloadPath.path.trim()) {
+      addDownloadPathMutation.mutate({
+        ...newDownloadPath,
+        enabled: true
+      })
+    }
+  }
+
+  const handleDownloadPathChange = (index: number, field: 'name' | 'path', value: string) => {
+    if (!formData || !settings) return
+    const updatedPaths = [...formData.download_paths]
+    updatedPaths[index] = { ...updatedPaths[index], [field]: value }
+    const newData = { ...formData, download_paths: updatedPaths }
+    setFormData(newData)
+    
+    // Mark download_paths as changed if they differ from original
+    const fieldKey = `download_paths_${index}_${field}`
+    const originalPaths = settings.download_paths || []
+    const originalValue = originalPaths[index]?.[field] || ''
+    
+    if (value !== originalValue) {
+      setChangedFields(prev => new Set([...prev, fieldKey]))
+      setChangedFields(prev => new Set([...prev, 'download_paths']))
+    } else {
+      setChangedFields(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(fieldKey)
+        // Check if any other download path fields are changed
+        const hasOtherChanges = Array.from(prev).some(key => 
+          key.startsWith('download_paths_') && key !== fieldKey
+        )
+        if (!hasOtherChanges) {
+          newSet.delete('download_paths')
+        }
+        return newSet
+      })
+    }
+  }
+  
+  const handleDownloadPathBlur = async (index: number, field: 'name' | 'path', value: string) => {
+    if (field !== 'path') return
+    
+    const fieldKey = `download_paths_${index}_${field}`
+    setValidatingFields(prev => new Set([...prev, fieldKey]))
+    setFieldErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors[fieldKey]
+      return newErrors
+    })
+    
+    try {
+      const error = await validatePath(value)
+      if (error) {
+        setFieldErrors(prev => ({ ...prev, [fieldKey]: error }))
+      }
+    } finally {
+      setValidatingFields(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(fieldKey)
+        return newSet
+      })
+    }
+  }
+
 
   const settingsTabs = [
     { name: 'General', href: '/settings/general', icon: SettingsIcon },
@@ -78,11 +191,14 @@ export default function Settings() {
     { name: 'Security', href: '/settings/security', icon: Shield },
   ]
 
+  const hasChanges = changedFields.size > 0
+  const hasErrors = Object.keys(fieldErrors).length > 0
+
   const headerActions = (
     <>
       <button
         onClick={handleReset}
-        disabled={!isDirty}
+        disabled={!hasChanges}
         className="flex items-center px-4 py-2 text-gray-600 dark:text-slate-300 bg-gray-200 dark:bg-slate-700 rounded-md hover:bg-gray-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         <RotateCcw className="w-4 h-4 mr-2" />
@@ -91,7 +207,7 @@ export default function Settings() {
       
       <button
         onClick={handleSave}
-        disabled={!isDirty || updateMutation.isPending}
+        disabled={!hasChanges || hasErrors || updateMutation.isPending}
         className="flex items-center px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         <Save className="w-4 h-4 mr-2" />
@@ -125,16 +241,17 @@ export default function Settings() {
       <div className="p-6 space-y-6">
         {renderTabContent()}
         
-        {isDirty && (
-          <div className="bg-yellow-100 dark:bg-yellow-500/10 border border-yellow-300 dark:border-yellow-500/20 rounded-lg p-4">
+        {hasChanges && (
+          <div className="bg-blue-100 dark:bg-blue-500/10 border border-blue-300 dark:border-blue-500/20 rounded-lg p-4">
             <div className="flex items-center">
-              <div className="text-yellow-800 dark:text-yellow-400 text-sm">
-                ⚠️ You have unsaved changes. Don't forget to save!
+              <div className="text-blue-800 dark:text-blue-400 text-sm">
+                💙 You have unsaved changes. Click Save to apply them!
               </div>
             </div>
           </div>
         )}
       </div>
+
     </div>
   )
   
@@ -297,6 +414,69 @@ export default function Settings() {
                   </a>
                   . Required for movie and TV show metadata.
                 </p>
+              </div>
+
+              {/* Download Paths Section */}
+              <div className="border-t pt-6">
+                <div className="flex items-center space-x-2 mb-4">
+                  <FolderIcon className="w-5 h-5 text-gray-500 dark:text-slate-400" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Download Paths</h3>
+                </div>
+                <p className="text-gray-500 dark:text-slate-400 text-sm mb-4">
+                  Configure where downloads are saved (used by both movies and TV shows)
+                </p>
+
+                <div className="space-y-4">
+                  <PathInput
+                    directories={formData.download_paths || []}
+                    onDirectoryChange={handleDownloadPathChange}
+                    onDirectoryBlur={handleDownloadPathBlur}
+                    onDeleteDirectory={(index) => deleteDownloadPathMutation.mutate(index)}
+                    changedFields={changedFields}
+                    fieldErrors={fieldErrors}
+                    validatingFields={validatingFields}
+                    nameFieldKeyFormatter={(index) => `download_paths_${index}_name`}
+                    pathFieldKeyFormatter={(index) => `download_paths_${index}_path`}
+                    namePlaceholder="Download client name"
+                    pathPlaceholder="/path/to/downloads"
+                    showBrowseButton={true}
+                  />
+
+                  {isAddingDownloadPath ? (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        placeholder="Download Client Name (e.g., SABnzbd)"
+                        value={newDownloadPath.name}
+                        onChange={(e) => setNewDownloadPath({ ...newDownloadPath, name: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="/downloads/completed"
+                        value={newDownloadPath.path}
+                        onChange={(e) => setNewDownloadPath({ ...newDownloadPath, path: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        onClick={handleAddDownloadPath}
+                        disabled={addDownloadPathMutation.isPending}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {addDownloadPathMutation.isPending ? 'Adding...' : 'Add'}
+                      </button>
+                      <button onClick={() => setIsAddingDownloadPath(false)} className="px-4 py-2 text-gray-600 dark:text-slate-300">Cancel</button>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => setIsAddingDownloadPath(true)}
+                      className="flex items-center space-x-2 px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-gray-800 dark:text-white rounded-md transition-colors"
+                    >
+                      <Plus className="w-5 h-5" />
+                      <span>Add Download Path</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -53,18 +53,73 @@ export default function SettingsPaths() {
     const fetchMediaPaths = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/config/paths/media-directories');
-        if (response.ok) {
-          const paths = await response.json();
-          // Add index to each path for editing/deleting
-          const pathsWithIndex = paths.map((path: MediaPath, index: number) => ({
-            ...path,
-            index
-          }));
-          setMediaPaths(pathsWithIndex);
-        } else {
-          console.error('Failed to fetch media paths');
+        const allPaths: MediaPath[] = [];
+        
+        // Fetch movies library paths
+        const moviesLibResponse = await fetch('/api/config/movies/library-paths');
+        if (moviesLibResponse.ok) {
+          const moviesLibPaths = await moviesLibResponse.json();
+          moviesLibPaths.forEach((path: any, index: number) => {
+            allPaths.push({
+              index,
+              media_type: 'movies',
+              path: path.path,
+              name: path.name,
+              enabled: path.enabled
+            });
+          });
         }
+        
+        // Fetch movies download paths
+        const moviesDownResponse = await fetch('/api/config/movies/download-paths');
+        if (moviesDownResponse.ok) {
+          const moviesDownPaths = await moviesDownResponse.json();
+          moviesDownPaths.forEach((path: any, index: number) => {
+            allPaths.push({
+              index,
+              media_type: 'downloads',
+              path: path.path,
+              name: path.name,
+              enabled: path.enabled
+            });
+          });
+        }
+        
+        // Fetch TV library paths
+        const tvLibResponse = await fetch('/api/config/tv/library-paths');
+        if (tvLibResponse.ok) {
+          const tvLibPaths = await tvLibResponse.json();
+          tvLibPaths.forEach((path: any, index: number) => {
+            allPaths.push({
+              index,
+              media_type: 'tv',
+              path: path.path,
+              name: path.name,
+              enabled: path.enabled
+            });
+          });
+        }
+        
+        // Fetch TV download paths (only if not already added from movies)
+        const tvDownResponse = await fetch('/api/config/tv/download-paths');
+        if (tvDownResponse.ok) {
+          const tvDownPaths = await tvDownResponse.json();
+          tvDownPaths.forEach((path: any, index: number) => {
+            // Check if this download path already exists (shared between movies and TV)
+            const existingPath = allPaths.find(p => p.path === path.path && p.media_type === 'downloads');
+            if (!existingPath) {
+              allPaths.push({
+                index,
+                media_type: 'downloads',
+                path: path.path,
+                name: path.name,
+                enabled: path.enabled
+              });
+            }
+          });
+        }
+        
+        setMediaPaths(allPaths);
       } catch (error) {
         console.error('Error fetching media paths:', error);
       } finally {
