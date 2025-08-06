@@ -17,6 +17,7 @@ interface AppConfig {
   tmdb_api_key: string
   theme: Theme
   download_paths: MediaDirectory[]
+  auto_match_threshold: number
 }
 
 interface MediaDirectory {
@@ -81,7 +82,7 @@ export default function Settings() {
   })
 
 
-  const handleInputChange = (field: keyof AppConfig, value: string | boolean) => {
+  const handleInputChange = (field: keyof AppConfig, value: string | boolean | number) => {
     if (!formData || !settings) return
     
     const fieldKey = String(field)
@@ -389,6 +390,28 @@ export default function Settings() {
                   <option value="YYYY-MM-DD hh:mm A">2024-03-15 02:30 PM</option>
                   <option value="MMM DD, YYYY HH:mm">Mar 15, 2024 14:30</option>
                 </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  Auto-Match Threshold: {Math.round((formData.auto_match_threshold || 0.8) * 100)}%
+                </label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="1"
+                  step="0.05"
+                  value={formData.auto_match_threshold || 0.8}
+                  onChange={(e) => handleInputChange('auto_match_threshold', parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
+                />
+                <div className="flex justify-between text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  <span>50%</span>
+                  <span>100%</span>
+                </div>
+                <p className="text-gray-500 dark:text-slate-500 text-xs mt-1">
+                  Shows with confidence above this threshold will be auto-selected during TV import
+                </p>
               </div>
               
               <div>

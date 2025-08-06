@@ -12,6 +12,7 @@ import History from './pages/History'
 import Search from './pages/Search'
 import MovieDetail from './pages/MovieDetail'
 import TVShowDetail from './pages/TVShowDetail'
+import ImportTVShows from './pages/ImportTVShows'
 import { ThemeProvider } from './contexts/ThemeContext'
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
             <Route path="/downloads/completed" element={<Downloads />} />
             <Route path="/downloads/history" element={<Downloads />} />
             <Route path="/shows/add" element={<Shows />} />
+            <Route path="/shows/import" element={<ImportTVShows />} />
             <Route path="/shows/calendar" element={<Shows />} />
             <Route path="/movies/add" element={<Movies />} />
             <Route path="/search" element={<Search />} />

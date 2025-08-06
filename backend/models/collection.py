@@ -3,7 +3,7 @@
 Database models for the media collection.
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey, BigInteger
 from sqlalchemy.orm import relationship
 from backend.core.database import Base
 
@@ -37,6 +37,10 @@ class TVShow(Base):
     rating = Column(Float)
     year = Column(Integer)
 
+    # Local file tracking
+    folder_path = Column(String)  # Path to show folder
+    total_size = Column(BigInteger, default=0)  # Total size in bytes
+
     # Tracking
     monitored = Column(Boolean, default=True)
     
@@ -69,11 +73,19 @@ class Episode(Base):
     title = Column(String)
     overview = Column(String)
     air_date = Column(String)
+    runtime = Column(Integer)  # Runtime in minutes
+
+    # Local file tracking
+    file_path = Column(String)  # Full path to episode file
+    file_name = Column(String)  # Episode filename
+    file_size = Column(BigInteger)  # File size in bytes
+    quality = Column(String)  # Video quality (1080p, 720p, etc.)
+    release_group = Column(String)  # Release group name
 
     # Tracking
     monitored = Column(Boolean, default=True)
     downloaded = Column(Boolean, default=False)
-    path = Column(String)
+    path = Column(String)  # Legacy field, kept for compatibility
 
     season = relationship("Season", back_populates="episodes")
 

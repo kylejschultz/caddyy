@@ -1,5 +1,6 @@
 import { Tv, List, Plus, Calendar, Monitor } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 
 interface TVShow {
@@ -13,9 +14,14 @@ interface TVShow {
   year: number
   monitored: boolean
   seasons_count: number
+  folder_path?: string
+  total_size?: number
+  downloaded_episodes?: number
+  total_episodes?: number
 }
 
 export default function Shows() {
+  const navigate = useNavigate()
   const [shows, setShows] = useState<TVShow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -82,6 +88,14 @@ export default function Shows() {
     }
   }
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B'
+    const k = 1024
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+  }
+
   return (
     <div>
       <PageHeader 
@@ -112,7 +126,11 @@ export default function Shows() {
               </div>
               <div className="divide-y divide-gray-200 dark:divide-slate-700">
                 {shows.map((show) => (
-                  <div key={show.id} className="p-4 flex items-center space-x-4 group hover:bg-gray-50 dark:hover:bg-slate-700/50">
+                  <div 
+                    key={show.id} 
+                    className="p-4 flex items-center space-x-4 group hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/shows/${show.id}`)}
+                  >
                     <div className="flex-shrink-0">
                       {show.poster_url ? (
                         <img
@@ -137,15 +155,30 @@ export default function Shows() {
                               {show.seasons_count} season{show.seasons_count !== 1 ? 's' : ''}
                             </span>
                           </div>
-                          {show.rating && (
-                            <div className="mt-1">
-                              <span className="text-sm text-gray-500 dark:text-slate-400">
+                          <div className="mt-1 flex items-center space-x-4 text-sm">
+                            {show.downloaded_episodes !== undefined && show.total_episodes !== undefined && (
+                              <span className={`${show.downloaded_episodes > 0 ? 'text-green-400' : 'text-slate-500'}`}>
+                                📁 {show.downloaded_episodes}/{show.total_episodes} episodes
+                              </span>
+                            )}
+                            {show.folder_path && (
+                              <span className="text-slate-500 truncate max-w-64">
+                                📂 {show.folder_path}
+                              </span>
+                            )}
+                            {show.total_size && show.total_size > 0 && (
+                              <span className="text-slate-500">
+                                💾 {formatFileSize(show.total_size)}
+                              </span>
+                            )}
+                            {show.rating && (
+                              <span className="text-gray-500 dark:text-slate-400">
                                 ⭐ {show.rating}/10
                               </span>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-3 ml-4">
+                        <div className="flex items-center space-x-3 ml-4" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => toggleMonitored(show.id, show.monitored)}

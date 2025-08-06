@@ -15,7 +15,8 @@ import {
   Library,
   Cog,
   Clock,
-  List
+  List,
+  Upload
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -47,6 +48,7 @@ const navigation: NavigationItem[] = [
     icon: Tv,
     children: [
       { name: 'Collection', href: '/shows', icon: Library },
+      { name: 'Import', href: '/shows/import', icon: Upload },
       { name: 'Settings', href: '/shows/settings', icon: Cog },
     ]
   },

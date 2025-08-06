@@ -153,8 +153,18 @@ def get_tv_shows(
     
     tv_shows = query.offset(skip).limit(limit).all()
     
-    return [
-        {
+    result = []
+    for show in tv_shows:
+        # Count downloaded episodes
+        downloaded_episodes = 0
+        total_episodes = 0
+        for season in show.seasons:
+            for episode in season.episodes:
+                total_episodes += 1
+                if episode.downloaded:
+                    downloaded_episodes += 1
+        
+        result.append({
             "id": show.id,
             "tmdb_id": show.tmdb_id,
             "title": show.title,
@@ -164,10 +174,14 @@ def get_tv_shows(
             "rating": show.rating,
             "year": show.year,
             "monitored": show.monitored,
-            "seasons_count": len(show.seasons)
-        }
-        for show in tv_shows
-    ]
+            "seasons_count": len(show.seasons),
+            "folder_path": show.folder_path,
+            "total_size": show.total_size,
+            "downloaded_episodes": downloaded_episodes,
+            "total_episodes": total_episodes
+        })
+    
+    return result
 
 @router.get("/tv/{show_id}")
 def get_tv_show(show_id: int, db: Session = Depends(get_db)):
@@ -186,9 +200,15 @@ def get_tv_show(show_id: int, db: Session = Depends(get_db)):
                 "title": episode.title,
                 "overview": episode.overview,
                 "air_date": episode.air_date,
+                "runtime": episode.runtime,
                 "monitored": episode.monitored,
                 "downloaded": episode.downloaded,
-                "path": episode.path
+                "path": episode.path,
+                "file_path": episode.file_path,
+                "file_name": episode.file_name,
+                "file_size": episode.file_size,
+                "quality": episode.quality,
+                "release_group": episode.release_group
             }
             for episode in season.episodes
         ]
@@ -204,6 +224,10 @@ def get_tv_show(show_id: int, db: Session = Depends(get_db)):
             "episodes": episodes_data
         })
     
+    # Count totals
+    downloaded_episodes = sum(1 for season in show.seasons for episode in season.episodes if episode.downloaded)
+    total_episodes = sum(len(season.episodes) for season in show.seasons)
+    
     return {
         "id": show.id,
         "tmdb_id": show.tmdb_id,
@@ -214,6 +238,10 @@ def get_tv_show(show_id: int, db: Session = Depends(get_db)):
         "rating": show.rating,
         "year": show.year,
         "monitored": show.monitored,
+        "folder_path": show.folder_path,
+        "total_size": show.total_size,
+        "downloaded_episodes": downloaded_episodes,
+        "total_episodes": total_episodes,
         "seasons": seasons_data
     }
 

@@ -25,6 +25,7 @@ class GeneralConfig(BaseModel):
     tmdb_api_key: str = ""
     theme: str = "system"  # Options: system, light, dark
     download_paths: list[MediaDirectory] = []
+    auto_match_threshold: float = 0.8  # Auto-match confidence threshold (0.5-1.0)
 
 
 class MoviesConfig(BaseModel):
