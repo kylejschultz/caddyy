@@ -6,14 +6,21 @@
 
 Caddyy is a media automation application that simplifies the process of fetching and organizing media content. Designed as a simple-to-use alternative to Radarr/Sonarr.
 
-### Key Features (Planned)
+### Key Features
 
-- 🎬 **Unified Media Management**: Movies and TV shows 
-- 🔍 **Direct Indexer Integration**: Built-in Newznab-compatible indexer support
-- 📡 **TMDB Integration**: Automatic metadata fetching and organization
-- ⬇️ **SABnzbd Integration**: Seamless download management
+- 🎬 **Unified Media Management**: Movies and TV shows with collection tracking
+- 📡 **TMDB Integration**: Live search and metadata fetching with automatic matching
+- 📂 **Media Import**: TRaSH Guides compatible scanning and import of existing libraries
+- ⚙️ **Configuration Management**: YAML-based configuration with live validation
+- 🎨 **Modern UI**: Dark/light theme support with responsive design
+- 🗂️ **Path Management**: Visual directory browser with validation
 - 🎯 **Simple Deployment**: Single Docker container with web UI configuration
 - 🚀 **Modern Stack**: FastAPI backend + React frontend
+
+### Planned Features
+- 🔍 **Direct Indexer Integration**: Built-in Newznab-compatible indexer support
+- ⬇️ **SABnzbd Integration**: Seamless download management
+- 📊 **Advanced Monitoring**: Episode/season tracking and quality management
 
 ## Tech Stack
 
@@ -95,6 +102,46 @@ npm run build
 # Builds to ../backend/static/
 ```
 
+## Usage
+
+### Initial Configuration
+
+1. **Configure TMDB API**: Add your TMDB API key in General Settings
+2. **Set Library Paths**: Configure library paths for TV Shows and Movies in their respective settings
+3. **Configure Download Paths**: Set up download directories in General Settings
+4. **Choose Theme**: Select your preferred theme (System, Light, or Dark)
+
+### Importing Existing Media
+
+**TV Shows Import**:
+1. Navigate to TV Shows → Import TV Shows
+2. Select library paths to scan using the pill-style selectors
+3. Click "Start Import Session" to begin scanning
+4. Review the import preview with automatic TMDB matching
+5. Use filters to view different categories (All, Ready for Import, Need Review, etc.)
+6. Manually search and select matches for shows that need review
+7. Set monitoring preferences for each show (All Episodes, Future Episodes, etc.)
+8. Select shows to import using the checkboxes
+9. Click "Import to Collection" to complete the import
+
+**Supported Media Structure**:
+Caddyy follows TRaSH Guides naming conventions:
+```
+TV Shows/
+├── Show Name (Year)/
+│   ├── Season 01/
+│   │   ├── Show Name S01E01.mkv
+│   │   └── Show Name S01E02.mkv
+│   └── Season 02/
+│       └── Show Name S02E01.mkv
+```
+
+### Collection Management
+
+- **View Collections**: Browse your imported media in the TV Shows and Movies pages
+- **Show Details**: Click on any show to view seasons, episodes, and download status
+- **Monitor Settings**: Manage monitoring preferences for automatic downloads (coming soon)
+
 ## Current Status
 
 ### ✅ Completed
@@ -105,31 +152,36 @@ npm run build
 - [x] Development environment and build process
 - [x] Static file serving integration
 - [x] Modern UI layout with sidebar navigation and page headers
-- [x] Settings management interface with validation
+- [x] **YAML Configuration System**: GitOps-friendly config with live validation
+- [x] **Theme Support**: System/light/dark mode with persistent selection
 - [x] **Reusable PathInput component** with file browser modal and validation
 - [x] **Path validation utility** (client & server-side directory validation)
-- [x] **General Settings**: Theme, logging, authentication, timezone, TMDB API key
-- [x] **Download Paths Management**: Add/edit/delete with validation and browse functionality
+- [x] **General Settings**: Theme, auto-match threshold, download paths, TMDB API key
 - [x] **Movies Settings**: Library path configuration with validation
 - [x] **TV Shows Settings**: Library path configuration with validation
-- [x] File browser component with directory navigation
-- [x] Filesystem API for browsing server directories
-- [x] Collection system backend (models, API, services)
-- [x] Database models for movies, TV shows, and collections
+- [x] **File Browser**: Server-side directory navigation and selection
+- [x] **Database Models**: Movies, TV shows, seasons, episodes with metadata tracking
+- [x] **TMDB Integration**: Live search, details fetching, and metadata matching
+- [x] **Media Scanner**: TRaSH Guides compatible filesystem scanning
+- [x] **Media Matcher**: Intelligent TMDB matching with confidence scoring
+- [x] **Import Workflow**: Complete TV show import with preview and manual matching
+- [x] **Collection Management**: Database-driven TV show collections with status tracking
+- [x] **Import UI**: Interactive import with filtering, sorting, and batch operations
 
 ### 🚧 In Progress
-- [ ] Docker containerization (framework complete, testing pending)
-- [ ] Library import/scanning workflow for existing media
-- [ ] TMDB API integration for metadata fetching
-- [ ] Indexer management system
-- [ ] Search functionality
-- [ ] Download queue management
+- [ ] **TV Show Detail Pages**: Season/episode management and monitoring controls
+- [ ] **Movie Import Workflow**: Scanning and importing existing movie libraries
+- [ ] **Collection Enhancement**: Advanced filtering, sorting, and bulk operations
+- [ ] **Quality Management**: Quality profiles and upgrade tracking
 
 ### 📋 Planned
-- [ ] SABnzbd integration
-- [ ] File watching and post-processing
-- [ ] GitHub Actions CI/CD
-- [ ] Music support (future)
+- [ ] **Indexer Integration**: Newznab-compatible search and NZB management
+- [ ] **SABnzbd Integration**: Download client integration and monitoring
+- [ ] **Automated Monitoring**: Episode release tracking and automatic downloads
+- [ ] **File Management**: Renaming, organization, and post-processing
+- [ ] **Docker Deployment**: Production-ready containerization
+- [ ] **GitHub Actions CI/CD**: Automated testing and deployment
+- [ ] **Music Support**: Future expansion to music libraries
 
 ## Contributing
 
