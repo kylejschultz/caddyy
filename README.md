@@ -101,18 +101,26 @@ npm run build
 - [x] Project scaffolding and structure
 - [x] FastAPI backend with health endpoint
 - [x] React frontend with routing and basic UI
-- [x] SQLite database setup
+- [x] SQLite database setup with Alembic migrations
 - [x] Development environment and build process
 - [x] Static file serving integration
 - [x] Modern UI layout with sidebar navigation and page headers
-- [x] Settings management interface
-- [x] Media paths configuration (Movies, TV Shows, Downloads)
+- [x] Settings management interface with validation
+- [x] **Reusable PathInput component** with file browser modal and validation
+- [x] **Path validation utility** (client & server-side directory validation)
+- [x] **General Settings**: Theme, logging, authentication, timezone, TMDB API key
+- [x] **Download Paths Management**: Add/edit/delete with validation and browse functionality
+- [x] **Movies Settings**: Library path configuration with validation
+- [x] **TV Shows Settings**: Library path configuration with validation
 - [x] File browser component with directory navigation
 - [x] Filesystem API for browsing server directories
+- [x] Collection system backend (models, API, services)
+- [x] Database models for movies, TV shows, and collections
 
 ### 🚧 In Progress
-- [ ] Backend integration for persisting media paths
-- [ ] TMDB API integration
+- [ ] Docker containerization (framework complete, testing pending)
+- [ ] Library import/scanning workflow for existing media
+- [ ] TMDB API integration for metadata fetching
 - [ ] Indexer management system
 - [ ] Search functionality
 - [ ] Download queue management
@@ -120,7 +128,6 @@ npm run build
 ### 📋 Planned
 - [ ] SABnzbd integration
 - [ ] File watching and post-processing
-- [ ] Docker containerization
 - [ ] GitHub Actions CI/CD
 - [ ] Music support (future)
 
