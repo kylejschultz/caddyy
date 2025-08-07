@@ -9,9 +9,21 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from backend.core.config import settings
-from backend.core.database import init_db
-from backend.api import router as api_router
+import sys
+import os
+
+# Ensure the backend package can be imported when running from the backend directory
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    from backend.core.config import settings
+    from backend.core.database import init_db
+    from backend.api import router as api_router
+except ImportError:
+    # Fallback for when running from the backend directory directly
+    from core.config import settings
+    from core.database import init_db
+    from api import router as api_router
 
 
 @asynccontextmanager

@@ -36,6 +36,10 @@ class TVShow(Base):
     backdrop_url = Column(String)
     rating = Column(Float)
     year = Column(Integer)
+    
+    # TMDB metadata (stored for quick access)
+    tmdb_total_episodes = Column(Integer, default=0)  # Total episodes from TMDB
+    tmdb_season_count = Column(Integer, default=0)    # Total seasons from TMDB
 
     # Local file tracking
     folder_path = Column(String)  # Path to show folder
@@ -56,6 +60,9 @@ class Season(Base):
     title = Column(String)
     overview = Column(String)
     poster_url = Column(String)
+    
+    # TMDB metadata
+    tmdb_episode_count = Column(Integer, default=0)  # Total episodes in this season from TMDB
     
     # Tracking
     monitored = Column(Boolean, default=True)

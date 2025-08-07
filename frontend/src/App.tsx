@@ -3,6 +3,7 @@ import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Movies from './pages/Movies'
 import Shows from './pages/Shows'
+import AddShows from './pages/AddShows'
 import Downloads from './pages/Downloads'
 import Settings from './pages/SettingsGeneral'
 import MoviesSettings from './pages/MoviesSettings'
@@ -27,13 +28,14 @@ function App() {
             <Route path="/downloads" element={<Downloads />} />
             <Route path="/downloads/completed" element={<Downloads />} />
             <Route path="/downloads/history" element={<Downloads />} />
-            <Route path="/shows/add" element={<Shows />} />
+            <Route path="/shows/add" element={<AddShows />} />
             <Route path="/shows/import" element={<ImportTVShows />} />
             <Route path="/shows/calendar" element={<Shows />} />
             <Route path="/movies/add" element={<Movies />} />
             <Route path="/search" element={<Search />} />
             <Route path="/movie/:id" element={<MovieDetail />} />
             <Route path="/tv/:id" element={<TVShowDetail />} />
+            <Route path="/shows/:id" element={<TVShowDetail />} />
             <Route path="/movies/settings" element={<MoviesSettings />} />
             <Route path="/shows/settings" element={<ShowsSettings />} />
             <Route path="/monitor" element={<Navigate to="/monitor/queue" replace />} />

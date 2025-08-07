@@ -21,6 +21,8 @@ import {
 } from 'lucide-react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
+import ImportCompletionModal from '../components/ImportCompletionModal'
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
 
 interface LibraryPath {
   name: string
@@ -81,6 +83,10 @@ export default function ImportTVShows() {
   const [monitoringStatus, setMonitoringStatus] = useState<Record<number, string>>({})
   const [sortBy, setSortBy] = useState<'name' | 'confidence' | 'status' | 'episodes'>('name')
   const [filterBy, setFilterBy] = useState<'all' | 'matched' | 'needs_review' | 'already_in_collection' | 'ready_for_import'>('all')
+  const [showCompletionModal, setShowCompletionModal] = useState(false)
+  const [completionData, setCompletionData] = useState<{importedCount: number, totalSelected: number, importedShows: string[]}>({importedCount: 0, totalSelected: 0, importedShows: []})
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showToDelete, setShowToDelete] = useState<{id: number, title: string, folder_path?: string, total_size?: number} | null>(null)
 
   // Fetch configured TV library paths
   const { data: config } = useQuery({
@@ -110,7 +116,7 @@ export default function ImportTVShows() {
     queryFn: () => currentSession 
       ? axios.get(`/api/import/session/${currentSession}/preview`).then(res => res.data.preview)
       : null,
-    enabled: !!currentSession && sessionStatus?.status === 'preview'
+    enabled: !!currentSession && (sessionStatus?.status === 'preview' || sessionStatus?.status === 'complete')
   })
 
   // Update preview when data changes
@@ -137,6 +143,33 @@ export default function ImportTVShows() {
       setMonitoringStatus(defaultMonitoring)
     }
   }, [previewData, settings])
+
+  // Show completion modal when import completes
+  useEffect(() => {
+    if (sessionStatus?.status === 'complete' && currentSession && importPreview) {
+      // Calculate imported shows
+      const importedShows: string[] = []
+      let actuallyImported = 0
+      
+      importPreview.matches.forEach((match, index) => {
+        if (selectedForImport.has(index) && match.selected_match) {
+          // Check if this was actually imported (not already in collection)
+          if (match.match_status !== 'already_in_collection') {
+            importedShows.push(match.scanned_item.show_name)
+            actuallyImported++
+          }
+        }
+      })
+      
+      setCompletionData({
+        importedCount: actuallyImported,
+        totalSelected: selectedForImport.size,
+        importedShows
+      })
+      
+      setShowCompletionModal(true)
+    }
+  }, [sessionStatus?.status, currentSession, importPreview, selectedForImport])
 
   // Start import session mutation
   const startSessionMutation = useMutation({
@@ -223,6 +256,70 @@ export default function ImportTVShows() {
       item_index: matchIndex,
       custom_search: query
     })
+  }
+
+  const handleRemoveFromCollection = (showData: {id: number, title: string, folder_path?: string, total_size?: number}) => {
+    setShowToDelete(showData)
+    setShowDeleteModal(true)
+  }
+
+  const handleDeleteConfirm = async (deleteFromDisk: boolean) => {
+    if (!showToDelete) return
+
+    try {
+      const url = new URL(`/api/collection/tv/${showToDelete.id}`, window.location.origin)
+      if (deleteFromDisk) {
+        url.searchParams.set('delete_from_disk', 'true')
+      }
+
+      const response = await fetch(url.toString(), {
+        method: 'DELETE',
+      })
+      
+      if (response.ok) {
+        // Immediately update the local import preview to reflect the removal
+        setImportPreview(prev => {
+          if (!prev) return prev
+          
+          const updatedMatches = prev.matches.map(match => {
+            if (match.selected_match?.id === showToDelete.id) {
+              // Update the match status to indicate it's no longer in collection
+              return {
+                ...match,
+                match_status: match.selected_match ? 'matched' : 'pending'
+              }
+            }
+            return match
+          })
+          
+          return {
+            ...prev,
+            matches: updatedMatches
+          }
+        })
+        
+        // Remove from selectedForImport set if it was selected
+        setSelectedForImport(prev => {
+          const newSet = new Set(prev)
+          // Find the match index for the removed show
+          const matchIndex = importPreview?.matches.findIndex(match => match.selected_match?.id === showToDelete.id)
+          if (matchIndex !== undefined && matchIndex >= 0) {
+            newSet.delete(matchIndex)
+          }
+          return newSet
+        })
+        
+        // Also refresh the preview from the backend
+        refetchPreview()
+      } else {
+        const errorData = await response.json()
+        console.error('Error removing TV show:', errorData.detail || 'Unknown error')
+        alert(`Failed to remove show: ${errorData.detail || 'Unknown error'}`)
+      }
+    } catch (err) {
+      console.error('Error removing TV show:', err)
+      alert('Failed to remove show. Please try again.')
+    }
   }
 
   const getStatusIcon = (status: string) => {
@@ -416,18 +513,18 @@ export default function ImportTVShows() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-slate-400">Scanned: </span>
-                  <span className="text-white font-medium">{sessionStatus.scanned_count}</span>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-white">{sessionStatus.scanned_count}</div>
+                  <div className="text-slate-400">Scanned</div>
                 </div>
-                <div>
-                  <span className="text-slate-400">Auto-Matched: </span>
-                  <span className="text-white font-medium">{sessionStatus.matched_count}</span>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-white">{sessionStatus.matched_count}</div>
+                  <div className="text-slate-400">Auto-Matched</div>
                 </div>
-                <div>
-                  <span className="text-slate-400">Already in Collection: </span>
-                  <span className="text-white font-medium">{importPreview?.summary.already_in_collection || 0}</span>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-white">{importPreview?.summary.already_in_collection || 0}</div>
+                  <div className="text-slate-400">Already in Collection</div>
                 </div>
               </div>
 
@@ -546,6 +643,7 @@ export default function ImportTVShows() {
                     onCustomSearch={handleCustomSearch}
                     onToggleImportSelection={() => toggleImportSelection(item.originalIndex)}
                     onUpdateMonitoringStatus={(status) => updateMonitoringStatus(item.originalIndex, status)}
+                    onRemoveFromCollection={handleRemoveFromCollection}
                   />
                 ))}
               </div>
@@ -559,6 +657,29 @@ export default function ImportTVShows() {
           </div>
         )}
       </div>
+      
+      <ImportCompletionModal
+        isOpen={showCompletionModal}
+        onClose={() => setShowCompletionModal(false)}
+        importedCount={completionData.importedCount}
+        totalSelected={completionData.totalSelected}
+        importedShows={completionData.importedShows}
+      />
+      
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false)
+          setShowToDelete(null)
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Remove TV Show"
+        itemName={showToDelete?.title || ''}
+        itemType="show"
+        hasFiles={Boolean(showToDelete?.folder_path)}
+        folderPath={showToDelete?.folder_path}
+        totalSize={showToDelete?.total_size}
+      />
     </>
   )
 }
@@ -572,9 +693,10 @@ interface ImportMatchCardProps {
   onCustomSearch: (index: number, query: string) => void
   onToggleImportSelection: () => void
   onUpdateMonitoringStatus: (status: string) => void
+  onRemoveFromCollection?: (showData: {id: number, title: string, folder_path?: string, total_size?: number}) => void
 }
 
-function ImportMatchCard({ match, matchIndex, isSelectedForImport, monitoringStatus, onSelectMatch, onCustomSearch, onToggleImportSelection, onUpdateMonitoringStatus }: ImportMatchCardProps) {
+function ImportMatchCard({ match, matchIndex, isSelectedForImport, monitoringStatus, onSelectMatch, onCustomSearch, onToggleImportSelection, onUpdateMonitoringStatus, onRemoveFromCollection }: ImportMatchCardProps) {
   const [showCustomSearch, setShowCustomSearch] = useState(false)
   const [customQuery, setCustomQuery] = useState('')
   const [isExpanded, setIsExpanded] = useState(false)
@@ -603,6 +725,15 @@ function ImportMatchCard({ match, matchIndex, isSelectedForImport, monitoringSta
       setCustomQuery('')
     }
   }
+
+  // Debug logging
+  console.log(`Match ${matchIndex}:`, {
+    show: match.scanned_item.show_name,
+    status: match.match_status,
+    hasSelectedMatch: !!match.selected_match,
+    selectedMatchId: match.selected_match?.id,
+    isSelectedForImport
+  })
 
   return (
     <div className="border border-slate-700 rounded-lg overflow-hidden">
@@ -656,17 +787,44 @@ function ImportMatchCard({ match, matchIndex, isSelectedForImport, monitoringSta
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
           {match.selected_match && (
             <div className="text-sm text-slate-300">
               {match.selected_match.title} ({match.selected_match.year})
             </div>
           )}
-          {isExpanded ? (
-            <ChevronDown className="w-5 h-5 text-slate-400" />
-          ) : (
-            <ChevronRight className="w-5 h-5 text-slate-400" />
+          
+          {/* In Collection / Remove Button for already imported shows */}
+          {match.match_status === 'already_in_collection' && match.selected_match && onRemoveFromCollection && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onRemoveFromCollection({
+                  id: match.selected_match!.id,
+                  title: match.selected_match!.title,
+                  folder_path: match.scanned_item.folder_path,
+                  total_size: undefined // We don't have size info in import data
+                })
+              }}
+              className="group px-3 py-1 rounded text-sm font-medium transition-all bg-purple-100 text-purple-800 hover:bg-red-100 hover:text-red-800 dark:bg-purple-900 dark:text-purple-300 dark:hover:bg-red-900 dark:hover:text-red-300"
+            >
+              <Archive className="w-3 h-3 mr-1 inline" />
+              <span className="group-hover:hidden">
+                In Collection
+              </span>
+              <span className="hidden group-hover:inline">
+                Remove
+              </span>
+            </button>
           )}
+          
+          <div onClick={() => setIsExpanded(!isExpanded)}>
+            {isExpanded ? (
+              <ChevronDown className="w-5 h-5 text-slate-400" />
+            ) : (
+              <ChevronRight className="w-5 h-5 text-slate-400" />
+            )}
+          </div>
         </div>
       </div>
 

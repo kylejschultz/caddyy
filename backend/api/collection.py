@@ -139,7 +139,7 @@ def remove_movie(movie_id: int, db: Session = Depends(get_db)):
 
 # TV Shows endpoints
 @router.get("/tv", response_model=List[dict])
-def get_tv_shows(
+async def get_tv_shows(
     skip: int = 0,
     limit: int = 100,
     monitored: Optional[bool] = None,
@@ -155,14 +155,33 @@ def get_tv_shows(
     
     result = []
     for show in tv_shows:
-        # Count downloaded episodes
+        # Count downloaded episodes (episodes that exist in database and are marked as downloaded)
         downloaded_episodes = 0
-        total_episodes = 0
         for season in show.seasons:
             for episode in season.episodes:
-                total_episodes += 1
                 if episode.downloaded:
                     downloaded_episodes += 1
+        
+        # Get TMDB total episodes by calling TMDB API
+        # This ensures we always show the complete episode count from TMDB
+        tmdb_total_episodes = 0
+        try:
+            # Import here to avoid circular imports
+            from backend.services.tmdb_service import TMDBService
+            tmdb_service = TMDBService()
+            tmdb_data = await tmdb_service.get_tv_details(show.tmdb_id)
+            tmdb_total_episodes = tmdb_data.get('number_of_episodes', 0) if tmdb_data else 0
+        except Exception as e:
+            print(f"Error fetching TMDB data for show {show.title}: {e}")
+            # Fall back to stored value or DB count if API fails
+            stored_tmdb_total = getattr(show, 'tmdb_total_episodes', None) or 0
+            if stored_tmdb_total > 0:
+                tmdb_total_episodes = stored_tmdb_total
+            else:
+                # Last resort: count episodes in database
+                tmdb_total_episodes = sum(len(season.episodes) for season in show.seasons)
+        
+        actual_total = tmdb_total_episodes
         
         result.append({
             "id": show.id,
@@ -178,7 +197,7 @@ def get_tv_shows(
             "folder_path": show.folder_path,
             "total_size": show.total_size,
             "downloaded_episodes": downloaded_episodes,
-            "total_episodes": total_episodes
+            "total_episodes": actual_total  # Use calculated or stored TMDB count
         })
     
     return result
@@ -213,6 +232,9 @@ def get_tv_show(show_id: int, db: Session = Depends(get_db)):
             for episode in season.episodes
         ]
         
+        # Handle cases where TMDB fields might be missing
+        season_tmdb_episodes = getattr(season, 'tmdb_episode_count', None) or 0
+        
         seasons_data.append({
             "id": season.id,
             "tmdb_id": season.tmdb_id,
@@ -221,12 +243,30 @@ def get_tv_show(show_id: int, db: Session = Depends(get_db)):
             "overview": season.overview,
             "poster_url": season.poster_url,
             "monitored": season.monitored,
-            "episodes": episodes_data
+            "episodes": episodes_data,
+            "total_episodes": season_tmdb_episodes,  # Use stored TMDB count with fallback
+            "downloaded_episodes": len([ep for ep in episodes_data if ep["downloaded"]])
         })
     
-    # Count totals
+    # Count downloaded episodes
     downloaded_episodes = sum(1 for season in show.seasons for episode in season.episodes if episode.downloaded)
-    total_episodes = sum(len(season.episodes) for season in show.seasons)
+    
+    # Handle cases where TMDB fields might be missing
+    tmdb_total_episodes = getattr(show, 'tmdb_total_episodes', None) or 0
+    
+    # If TMDB total is 0 or missing, calculate from stored episodes
+    # This handles imported shows that may not have TMDB totals set
+    if tmdb_total_episodes == 0:
+        # Count all episodes that exist in the database for this show
+        total_episodes_in_db = sum(len(season.episodes) for season in show.seasons)
+        # If we have episodes but no TMDB total, use the DB count
+        # Otherwise, keep 0 to indicate unknown
+        if total_episodes_in_db > 0:
+            actual_total = total_episodes_in_db
+        else:
+            actual_total = tmdb_total_episodes
+    else:
+        actual_total = tmdb_total_episodes
     
     return {
         "id": show.id,
@@ -238,20 +278,21 @@ def get_tv_show(show_id: int, db: Session = Depends(get_db)):
         "rating": show.rating,
         "year": show.year,
         "monitored": show.monitored,
+        "monitoring_option": "All Episodes" if show.monitored else "None",  # Convert boolean to option
         "folder_path": show.folder_path,
         "total_size": show.total_size,
         "downloaded_episodes": downloaded_episodes,
-        "total_episodes": total_episodes,
+        "total_episodes_count": actual_total,  # Use calculated or stored TMDB count
         "seasons": seasons_data
     }
 
 @router.post("/tv")
-def add_tv_show_to_collection(tmdb_id: int, db: Session = Depends(get_db)):
+async def add_tv_show_to_collection(tmdb_id: int, db: Session = Depends(get_db)):
     """Add a TV show to the collection by TMDB ID"""
     collection_service = CollectionService(db)
     
     try:
-        tv_show = collection_service.add_tv_show(tmdb_id)
+        tv_show = await collection_service.add_tv_show(tmdb_id)
         return {
             "id": tv_show.id,
             "tmdb_id": tv_show.tmdb_id,
@@ -296,13 +337,77 @@ def update_tv_show(show_id: int, update_data: dict, db: Session = Depends(get_db
         "seasons_count": len(show.seasons)
     }
 
+@router.patch("/tv/{show_id}/monitoring")
+def update_monitoring_status(show_id: int, data: dict, db: Session = Depends(get_db)):
+    """Update monitoring status for a TV show"""
+    show = db.query(TVShow).filter(TVShow.id == show_id).first()
+    if not show:
+        raise HTTPException(status_code=404, detail="TV show not found")
+    
+    # Convert monitoring option to boolean
+    monitoring_option = data.get("monitoring")
+    if monitoring_option == "None":
+        show.monitored = False
+    else:
+        # For now, any non-"None" option means monitored
+        # In the future, you could store specific monitoring preferences
+        show.monitored = True
+    
+    db.commit()
+    db.refresh(show)
+    
+    return {
+        "id": show.id,
+        "monitored": show.monitored,
+        "monitoring_option": "All Episodes" if show.monitored else "None"
+    }
+
+@router.post("/tv/{show_id}/refresh")
+async def refresh_tv_show_episodes(show_id: int, db: Session = Depends(get_db)):
+    """Refresh episode data for a TV show from TMDB"""
+    show = db.query(TVShow).filter(TVShow.id == show_id).first()
+    if not show:
+        raise HTTPException(status_code=404, detail="TV show not found")
+    
+    collection_service = CollectionService(db)
+    
+    try:
+        await collection_service.refresh_tv_show_episodes(show)
+        return {"message": f"Successfully refreshed episodes for {show.title}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to refresh episodes: {str(e)}")
+
 @router.delete("/tv/{show_id}")
-def remove_tv_show(show_id: int, db: Session = Depends(get_db)):
+def remove_tv_show(
+    show_id: int, 
+    delete_from_disk: bool = False,
+    db: Session = Depends(get_db)
+):
     """Remove a TV show from the collection"""
     show = db.query(TVShow).filter(TVShow.id == show_id).first()
     if not show:
         raise HTTPException(status_code=404, detail="TV show not found")
     
+    # If deleting from disk, remove the actual files
+    if delete_from_disk and show.folder_path:
+        import os
+        import shutil
+        try:
+            if os.path.exists(show.folder_path):
+                shutil.rmtree(show.folder_path)
+                print(f"Deleted folder: {show.folder_path}")
+        except Exception as e:
+            print(f"Error deleting folder {show.folder_path}: {e}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to delete files from disk: {str(e)}"
+            )
+    
     db.delete(show)
     db.commit()
-    return {"message": "TV show removed from collection"}
+    
+    message = "TV show removed from collection"
+    if delete_from_disk:
+        message += " and files deleted from disk"
+    
+    return {"message": message}
