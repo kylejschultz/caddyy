@@ -138,9 +138,15 @@ TV Shows/
 
 ### Collection Management
 
-- **View Collections**: Browse your imported media in the TV Shows and Movies pages
-- **Show Details**: Click on any show to view seasons, episodes, and download status
-- **Monitor Settings**: Manage monitoring preferences for automatic downloads (coming soon)
+**TV Show Collections**:
+- **Browse Collection**: View all imported TV shows with download progress and library paths
+- **Add Shows**: Search TMDB and add shows to collection with monitoring preferences
+- **Show Details**: Comprehensive detail pages with complete season/episode listings
+- **Episode Tracking**: See complete TMDB episode counts vs. your downloaded episodes (e.g., '2/55 episodes')
+- **Season Management**: Expandable season accordions showing all episodes with download status
+- **Monitoring Options**: Configure monitoring for All Episodes, Future Episodes, Current Season, etc.
+- **Collection Actions**: Remove shows from collection with optional disk cleanup
+- **Library Integration**: User-friendly library path names and accurate size tracking
 
 ## Current Status
 
@@ -167,11 +173,19 @@ TV Shows/
 - [x] **Import Workflow**: Complete TV show import with preview and manual matching
 - [x] **Collection Management**: Database-driven TV show collections with status tracking
 - [x] **Import UI**: Interactive import with filtering, sorting, and batch operations
+- [x] **TV Show Collection System**: Complete collection management with add/remove functionality
+- [x] **TV Show Detail Pages**: Comprehensive detail views with season/episode management
+- [x] **Collection Status Display**: Shows complete TMDB episode counts vs downloaded (e.g., '2/55 episodes')
+- [x] **Library Path Resolution**: User-friendly library names (e.g., 'Dev Disk') instead of raw paths
+- [x] **Season/Episode Components**: Expandable season accordions with complete episode listings
+- [x] **Monitoring Controls**: Collection monitoring preferences with dropdown controls
+- [x] **Add to Collection**: Search and add TV shows with monitoring configuration
+- [x] **Collection Removal**: Remove shows with optional disk cleanup
+- [x] **TMDB Data Integration**: Complete metadata merging with local collection data
 
 ### 🚧 In Progress
-- [ ] **TV Show Detail Pages**: Season/episode management and monitoring controls
 - [ ] **Movie Import Workflow**: Scanning and importing existing movie libraries
-- [ ] **Collection Enhancement**: Advanced filtering, sorting, and bulk operations
+- [ ] **Movie Collection System**: Complete movie collection management
 - [ ] **Quality Management**: Quality profiles and upgrade tracking
 
 ### 📋 Planned
