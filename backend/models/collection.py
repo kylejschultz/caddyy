@@ -3,8 +3,9 @@
 Database models for the media collection.
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey, BigInteger
+from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey, BigInteger, Text, DateTime
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from backend.core.database import Base
 
 class Movie(Base):
@@ -96,4 +97,16 @@ class Episode(Base):
     path = Column(String)  # Legacy field, kept for compatibility
 
     season = relationship("Season", back_populates="episodes")
+
+
+# Configuration Models
+class ConfigSetting(Base):
+    __tablename__ = "config_settings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    key = Column(String, unique=True, index=True, nullable=False)
+    value = Column(Text, nullable=True)
+    section = Column(String, index=True)  # e.g., 'general', 'tv', 'movies'
+    description = Column(String)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

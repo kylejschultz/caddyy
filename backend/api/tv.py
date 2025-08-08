@@ -81,6 +81,7 @@ class CollectionTVShowDetails(BaseModel):
     # Collection-specific fields
     in_collection: bool = True
     monitored: bool = True
+    monitoring_option: Optional[str] = None
     folder_path: Optional[str] = None
     library_path_name: Optional[str] = None
     total_size: Optional[int] = None
@@ -382,6 +383,7 @@ async def get_collection_tv_show(show_id: int, db: Session = Depends(get_db)) ->
             seasons=seasons_data,
             in_collection=True,
             monitored=show.monitored,
+            monitoring_option=show.monitoring_option,
             folder_path=show.folder_path,
             library_path_name=library_path_name,
             total_size=show.total_size,

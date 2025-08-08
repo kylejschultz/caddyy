@@ -194,6 +194,7 @@ async def get_tv_shows(
             "rating": show.rating,
             "year": show.year,
             "monitored": show.monitored,
+            "monitoring_option": show.monitoring_option,
             "seasons_count": len(show.seasons),
             "folder_path": show.folder_path,
             "total_size": show.total_size,
