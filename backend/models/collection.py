@@ -47,8 +47,9 @@ class TVShow(Base):
 
     # Tracking
     monitored = Column(Boolean, default=True)
+    monitoring_option = Column(String, default='All')  # 'All', 'None', 'Existing', 'First Season', 'Latest Season'
     
-    seasons = relationship("Season", back_populates="show")
+    seasons = relationship("Season", back_populates="show", cascade="all, delete-orphan")
 
 class Season(Base):
     __tablename__ = "seasons"
@@ -68,7 +69,7 @@ class Season(Base):
     monitored = Column(Boolean, default=True)
 
     show = relationship("TVShow", back_populates="seasons")
-    episodes = relationship("Episode", back_populates="season")
+    episodes = relationship("Episode", back_populates="season", cascade="all, delete-orphan")
 
 class Episode(Base):
     __tablename__ = "episodes"

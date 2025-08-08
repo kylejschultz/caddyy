@@ -182,6 +182,12 @@ TV Shows/
 - [x] **Add to Collection**: Search and add TV shows with monitoring configuration
 - [x] **Collection Removal**: Remove shows with optional disk cleanup
 - [x] **TMDB Data Integration**: Complete metadata merging with local collection data
+- [x] **Monitoring Status Persistence**: Proper database storage and retrieval of monitoring preferences
+- [x] **Enhanced Collection Service**: Robust TV show collection management with improved error handling
+- [x] **TrashGuides Naming Service**: Comprehensive naming conventions and folder creation for media files
+- [x] **Toast Notifications**: User-friendly success/error notifications throughout the application
+- [x] **Improved Add to Collection Modal**: Enhanced UI with library path selection and monitoring options
+- [x] **Collection API Enhancements**: Full CRUD operations with proper monitoring option support
 
 ### 🚧 In Progress
 - [ ] **Movie Import Workflow**: Scanning and importing existing movie libraries

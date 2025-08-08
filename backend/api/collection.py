@@ -9,6 +9,7 @@ from typing import List, Optional
 from backend.core.database import get_db
 from backend.models.collection import Movie, TVShow, Season, Episode
 from backend.services.collection import CollectionService
+from backend.services.naming_service import naming_service
 
 router = APIRouter(prefix="/collection", tags=["collection"])
 
@@ -278,7 +279,7 @@ def get_tv_show(show_id: int, db: Session = Depends(get_db)):
         "rating": show.rating,
         "year": show.year,
         "monitored": show.monitored,
-        "monitoring_option": "All Episodes" if show.monitored else "None",  # Convert boolean to option
+        "monitoring_option": show.monitoring_option,
         "folder_path": show.folder_path,
         "total_size": show.total_size,
         "downloaded_episodes": downloaded_episodes,
@@ -287,12 +288,75 @@ def get_tv_show(show_id: int, db: Session = Depends(get_db)):
     }
 
 @router.post("/tv")
-async def add_tv_show_to_collection(tmdb_id: int, db: Session = Depends(get_db)):
-    """Add a TV show to the collection by TMDB ID"""
+async def add_tv_show_to_collection(
+    tmdb_id: int, 
+    library_path: str = None,
+    create_folder: bool = True,
+    monitoring: str = None,
+    monitoring_option: str = None,
+    monitoring_status: str = None,
+    db: Session = Depends(get_db)
+):
+    """Add a TV show to the collection by TMDB ID with disk selection"""
+    # Use the existing collection service (expects DB in constructor)
     collection_service = CollectionService(db)
+    from backend.services.tmdb_service import TMDBService
+    tmdb = TMDBService()
     
     try:
-        tv_show = await collection_service.add_tv_show(tmdb_id)
+        # Get show details from TMDB first (for naming and season list)
+        show_data = await tmdb.get_tv_details(tmdb_id)
+        if not show_data:
+            raise HTTPException(status_code=404, detail="TV show not found on TMDB")
+        
+        show_name = show_data.get("name", "Unknown")
+        show_year = None
+        if show_data.get("first_air_date"):
+            try:
+                show_year = int(show_data["first_air_date"].split("-")[0])
+            except (ValueError, IndexError):
+                pass
+        
+        # If library_path provided and create_folder is True, create folder structure
+        folder_path = None
+        if library_path and create_folder:
+            # Validate library path
+            path_validation = naming_service.validate_library_path(library_path)
+            if not path_validation["valid"]:
+                raise HTTPException(status_code=400, detail=f"Invalid library path: {path_validation['message']}")
+            if not path_validation["writable"]:
+                raise HTTPException(status_code=400, detail="Library path is not writable")
+            
+            # Get season numbers from TMDB to create season folders
+            seasons = [s["season_number"] for s in show_data.get("seasons", []) if s.get("season_number", 0) > 0]
+            
+            # Create folder structure
+            folder_result = naming_service.create_show_folder_structure(
+                library_path=library_path,
+                show_name=show_name,
+                year=show_year,
+                seasons=seasons
+            )
+            
+            if not folder_result.success:
+                raise HTTPException(status_code=500, detail=f"Failed to create folder structure: {folder_result.message}")
+            
+            folder_path = folder_result.folder_path
+        
+        # Add show to collection using the collection service, passing folder_path
+        tv_show = await collection_service.add_tv_show(tmdb_id, folder_path=folder_path)
+        
+        if not tv_show:
+            raise HTTPException(status_code=500, detail="Failed to add show to collection")
+        
+        # Set the monitoring option if provided
+        monitoring_value = monitoring or monitoring_option or monitoring_status
+        if monitoring_value:
+            tv_show.monitoring_option = monitoring_value
+            tv_show.monitored = monitoring_value != "None"
+            db.commit()
+            db.refresh(tv_show)
+        
         return {
             "id": tv_show.id,
             "tmdb_id": tv_show.tmdb_id,
@@ -303,10 +367,14 @@ async def add_tv_show_to_collection(tmdb_id: int, db: Session = Depends(get_db))
             "rating": tv_show.rating,
             "year": tv_show.year,
             "monitored": tv_show.monitored,
-            "seasons_count": len(tv_show.seasons)
+            "folder_path": tv_show.folder_path,
+            "seasons_count": len(tv_show.seasons),
+            "folder_created": bool(folder_path)
         }
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to add show to collection: {str(e)}")
 
 @router.put("/tv/{show_id}")
 def update_tv_show(show_id: int, update_data: dict, db: Session = Depends(get_db)):
@@ -344,14 +412,14 @@ def update_monitoring_status(show_id: int, data: dict, db: Session = Depends(get
     if not show:
         raise HTTPException(status_code=404, detail="TV show not found")
     
-    # Convert monitoring option to boolean
+    # Get monitoring option from the request
     monitoring_option = data.get("monitoring")
-    if monitoring_option == "None":
-        show.monitored = False
-    else:
-        # For now, any non-"None" option means monitored
-        # In the future, you could store specific monitoring preferences
-        show.monitored = True
+    
+    # Store the actual monitoring option
+    show.monitoring_option = monitoring_option
+    
+    # Update the monitored boolean for backward compatibility
+    show.monitored = monitoring_option != "None"
     
     db.commit()
     db.refresh(show)
@@ -359,7 +427,7 @@ def update_monitoring_status(show_id: int, data: dict, db: Session = Depends(get
     return {
         "id": show.id,
         "monitored": show.monitored,
-        "monitoring_option": "All Episodes" if show.monitored else "None"
+        "monitoring_option": show.monitoring_option
     }
 
 @router.post("/tv/{show_id}/refresh")
@@ -388,26 +456,125 @@ def remove_tv_show(
     if not show:
         raise HTTPException(status_code=404, detail="TV show not found")
     
-    # If deleting from disk, remove the actual files
-    if delete_from_disk and show.folder_path:
-        import os
-        import shutil
-        try:
-            if os.path.exists(show.folder_path):
-                shutil.rmtree(show.folder_path)
-                print(f"Deleted folder: {show.folder_path}")
-        except Exception as e:
-            print(f"Error deleting folder {show.folder_path}: {e}")
-            raise HTTPException(
-                status_code=500, 
-                detail=f"Failed to delete files from disk: {str(e)}"
+    show_title = show.title  # Store title for response message
+    folder_path = show.folder_path
+    
+    # Start a transaction
+    try:
+        # If deleting from disk, remove the actual files first
+        if delete_from_disk and folder_path:
+            import os
+            import shutil
+            try:
+                if os.path.exists(folder_path):
+                    shutil.rmtree(folder_path)
+                    print(f"Deleted folder: {folder_path}")
+            except Exception as e:
+                print(f"Error deleting folder {folder_path}: {e}")
+                raise HTTPException(
+                    status_code=500, 
+                    detail=f"Failed to delete files from disk: {str(e)}"
+                )
+        
+        # Use SQLAlchemy cascade deletion - this should automatically delete
+        # all related seasons and episodes due to cascade="all, delete-orphan"
+        db.delete(show)
+        db.commit()
+        
+        # Verify the deletion worked by checking for orphaned records
+        orphaned_seasons = db.query(Season).filter(Season.show_id == show_id).all()
+        if orphaned_seasons:
+            print(f"Warning: Found {len(orphaned_seasons)} orphaned seasons after deleting show {show_id}")
+            # Clean up manually if cascade didn't work
+            for season in orphaned_seasons:
+                db.delete(season)
+            
+        orphaned_episodes = db.query(Episode).filter(
+            Episode.season_id.in_(
+                db.query(Season.id).filter(Season.show_id == show_id)
             )
+        ).all()
+        if orphaned_episodes:
+            print(f"Warning: Found {len(orphaned_episodes)} orphaned episodes after deleting show {show_id}")
+            # Clean up manually if cascade didn't work
+            for episode in orphaned_episodes:
+                db.delete(episode)
+                
+        # Final commit if we had to clean up orphans
+        if orphaned_seasons or orphaned_episodes:
+            db.commit()
+        
+    except Exception as e:
+        db.rollback()
+        print(f"Error deleting show {show_id}: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to remove show from database: {str(e)}"
+        )
     
-    db.delete(show)
-    db.commit()
-    
-    message = "TV show removed from collection"
+    message = f"TV show '{show_title}' removed from collection"
     if delete_from_disk:
         message += " and files deleted from disk"
     
     return {"message": message}
+
+# Library Management endpoints
+@router.get("/library/tv/paths")
+def get_tv_library_paths():
+    """Get configured TV library paths"""
+    try:
+        paths = naming_service.get_library_paths()
+        return {
+            "paths": paths,
+            "total": len(paths)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get library paths: {str(e)}")
+
+@router.post("/library/paths/validate")
+def validate_library_path(path: str):
+    """Validate a library path for use"""
+    try:
+        validation = naming_service.validate_library_path(path)
+        return validation
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to validate path: {str(e)}")
+
+@router.post("/cleanup/orphaned-records")
+def cleanup_orphaned_records(db: Session = Depends(get_db)):
+    """Clean up orphaned seasons and episodes that don't have valid parent records"""
+    try:
+        # Find orphaned seasons (seasons without valid shows)
+        orphaned_seasons = db.query(Season).filter(
+            ~Season.show_id.in_(db.query(TVShow.id))
+        ).all()
+        
+        # Find orphaned episodes (episodes without valid seasons)
+        orphaned_episodes = db.query(Episode).filter(
+            ~Episode.season_id.in_(db.query(Season.id))
+        ).all()
+        
+        # Delete orphaned episodes first
+        orphaned_episode_count = len(orphaned_episodes)
+        for episode in orphaned_episodes:
+            db.delete(episode)
+            
+        # Delete orphaned seasons
+        orphaned_season_count = len(orphaned_seasons)
+        for season in orphaned_seasons:
+            db.delete(season)
+        
+        db.commit()
+        
+        return {
+            "message": "Cleanup completed successfully",
+            "orphaned_episodes_removed": orphaned_episode_count,
+            "orphaned_seasons_removed": orphaned_season_count
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to cleanup orphaned records: {str(e)}"
+        )

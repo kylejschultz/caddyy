@@ -48,8 +48,8 @@ export default function DeleteConfirmationModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center space-x-2">
             <AlertTriangle className="w-5 h-5 text-red-500" />
@@ -65,7 +65,7 @@ export default function DeleteConfirmationModal({
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 overflow-y-auto flex-1">
           <p className="text-gray-600 dark:text-slate-300 mb-6">
             You are about to remove "{itemName}" from your collection. Please choose how you want to proceed:
           </p>
@@ -133,7 +133,7 @@ export default function DeleteConfirmationModal({
                       {folderPath}
                     </p>
                   )}
-                  {totalSize && totalSize > 0 && (
+                  {totalSize != null && totalSize > 0 && (
                     <p className="text-xs text-red-700 dark:text-red-300 mt-1">
                       <strong>{formatFileSize(totalSize)}</strong> will be freed from disk
                     </p>

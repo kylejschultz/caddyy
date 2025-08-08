@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Search as SearchIcon, Tv, Star, Plus } from 'lucide-react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
+import AddToCollectionModal from '../components/AddToCollectionModal'
 
 interface TVShowResult {
   id: number
@@ -22,6 +23,8 @@ export default function AddShows() {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
   const query = searchParams.get('q') || ''
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [selectedShow, setSelectedShow] = useState<TVShowResult | null>(null)
 
   const { data: rawResults, isLoading, error } = useQuery<TVShowResult[]>({
     queryKey: ['search-tv', query],
@@ -40,17 +43,19 @@ export default function AddShows() {
     }
   }
 
-  const handleAddShow = async (show: TVShowResult) => {
-    try {
-      await axios.post('/api/collection/tv', null, {
-        params: { tmdb_id: show.id }
-      })
-      // Navigate to the show detail page
-      navigate(`/tv/${show.id}`)
-    } catch (error) {
-      console.error('Failed to add show:', error)
-      alert('Failed to add show to collection. Please try again.')
-    }
+  const handleAddShow = (show: TVShowResult) => {
+    setSelectedShow(show)
+    setShowAddModal(true)
+  }
+
+  const handleAddModalClose = () => {
+    setShowAddModal(false)
+    setSelectedShow(null)
+  }
+
+  const handleAddSuccess = () => {
+    // The AddToCollectionModal handles the success flow
+    // We just need to refresh the search results or navigate
   }
 
   const headerActions = (
@@ -195,6 +200,20 @@ export default function AddShows() {
           </div>
         )}
       </div>
+      
+      {selectedShow && (
+        <AddToCollectionModal
+          isOpen={showAddModal}
+          onClose={handleAddModalClose}
+          showId={selectedShow.id.toString()}
+          showName={selectedShow.title}
+          showPosterUrl={selectedShow.poster_url}
+          showOverview={selectedShow.overview}
+          showYear={selectedShow.year}
+          showRating={selectedShow.rating}
+          onSuccess={handleAddSuccess}
+        />
+      )}
     </>
   )
 }

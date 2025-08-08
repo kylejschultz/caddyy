@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
@@ -21,6 +21,7 @@ import SeasonAccordion, { Season } from '../components/SeasonAccordion'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
 import AddToCollectionModal from '../components/AddToCollectionModal'
 import MonitoringDropdown, { MonitoringOption } from '../components/MonitoringDropdown'
+import Toast from '../components/Toast'
 
 interface TVShowDetails {
   id: number
@@ -62,6 +63,8 @@ export default function TVShowDetail() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showAddToCollectionModal, setShowAddToCollectionModal] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  const [showToast, setShowToast] = useState(false)
+  const [removedShowData, setRemovedShowData] = useState<{ name: string; deletedFromDisk: boolean } | null>(null)
 
   const { data: show, isLoading, error } = useQuery<TVShowDetails>({
     queryKey: ['tv-show', id],
@@ -142,8 +145,13 @@ export default function TVShowDetail() {
         tmdb_id: parseInt(id!), // Ensure TMDB ID is set
       }
       
-      console.log('🔄 TVShowDetail: Merged data:', mergedData)
-      console.log('🎦 TVShowDetail: Seasons available:', mergedData.seasons)
+      // The backend now properly stores and returns monitoring_option
+      if (collectionData) {
+        mergedData.monitoring_option = collectionData.monitoring_option || 'All'
+      } else {
+        mergedData.monitoring_option = 'None'
+      }
+      
       return mergedData
     },
     enabled: !!id,
@@ -162,9 +170,16 @@ export default function TVShowDetail() {
       
       // Use the collection ID for deletion
       const response = await axios.delete(`/api/collection/tv/${collectionId}?delete_from_disk=${deleteFromDisk}`)
-      return response.data
+      return { deleteFromDisk } // Return the deleteFromDisk flag for the toast
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Store the removed show data for the toast
+      setRemovedShowData({
+        name: show?.title || 'Unknown Show',
+        deletedFromDisk: data.deleteFromDisk
+      })
+      setShowToast(true)
+      
       // Invalidate and refetch the current show data
       queryClient.invalidateQueries({ queryKey: ['tv-show', id] })
       // Close the modal
@@ -580,6 +595,20 @@ export default function TVShowDetail() {
           queryClient.invalidateQueries({ queryKey: ['tv-show', id] })
         }}
       />
+      
+      {/* Toast notification for show removal */}
+      {showToast && removedShowData && (
+        <Toast
+          type="error"
+          title="Show Removed"
+          message={`"${removedShowData.name}" has been removed from your collection${removedShowData.deletedFromDisk ? ' and deleted from disk' : ''}.`}
+          isVisible={showToast}
+          onClose={() => {
+            setShowToast(false)
+            setRemovedShowData(null)
+          }}
+        />
+      )}
     </>
   )
 }

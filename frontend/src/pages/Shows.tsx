@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
+import Toast from '../components/Toast'
 
 interface TVShow {
   id: number
@@ -39,6 +40,8 @@ export default function Shows() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showToDelete, setShowToDelete] = useState<TVShow | null>(null)
   const [mediaPaths, setMediaPaths] = useState<MediaPath[]>([])
+  const [showToast, setShowToast] = useState(false)
+  const [removedShowData, setRemovedShowData] = useState<{ name: string; deletedFromDisk: boolean } | null>(null)
   const [currentView, setCurrentView] = useState<ViewType>(() => {
     // Get saved view preference from localStorage
     const savedView = localStorage.getItem('caddyy-shows-view') as ViewType
@@ -50,9 +53,11 @@ export default function Shows() {
     fetchMediaPaths()
   }, [])
 
-  const fetchShows = async () => {
+  const fetchShows = async (skipLoading = false) => {
     try {
-      setLoading(true)
+      if (!skipLoading) {
+        setLoading(true)
+      }
       const response = await fetch('/api/collection/tv')
       if (!response.ok) {
         throw new Error('Failed to fetch TV shows')
@@ -62,7 +67,9 @@ export default function Shows() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
-      setLoading(false)
+      if (!skipLoading) {
+        setLoading(false)
+      }
     }
   }
 
@@ -126,7 +133,22 @@ export default function Shows() {
       })
       
       if (response.ok) {
-        fetchShows() // Refresh the list
+        // Store the removed show data for the toast
+        setRemovedShowData({
+          name: showToDelete.title,
+          deletedFromDisk: deleteFromDisk
+        })
+        console.log('Setting toast visible for:', showToDelete.title)
+        setShowToast(true)
+        
+        // Close the modal
+        setShowDeleteModal(false)
+        setShowToDelete(null)
+        
+        // Delay the list refresh to allow the toast to show (skip loading state)
+        setTimeout(() => {
+          fetchShows(true) // Skip loading state to prevent component re-render issues
+        }, 100)
       } else {
         const errorData = await response.json()
         console.error('Error removing TV show:', errorData.detail || 'Unknown error')
@@ -471,6 +493,16 @@ export default function Shows() {
         hasFiles={Boolean(showToDelete?.folder_path)}
         folderPath={showToDelete?.folder_path}
         totalSize={showToDelete?.total_size}
+      />
+      
+      {/* Toast for removal notifications */}
+      <Toast
+        isVisible={showToast}
+        type="error"
+        title="Show Removed Successfully!"
+        message={removedShowData ? `"${removedShowData.name}" has been removed from your collection.${removedShowData.deletedFromDisk ? ' Files were also deleted from disk.' : ''}` : ''}
+        duration={4000}
+        onClose={() => setShowToast(false)}
       />
     </div>
   )

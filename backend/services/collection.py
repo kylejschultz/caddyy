@@ -72,12 +72,12 @@ class CollectionService:
         
         return movie
     
-    async def add_tv_show(self, tmdb_id: int) -> TVShow:
+    async def add_tv_show(self, tmdb_id: int, folder_path: str = None) -> TVShow:
         """Add a TV show to the collection by TMDB ID"""
         # Check if TV show already exists
         existing = self.db.query(TVShow).filter(TVShow.tmdb_id == tmdb_id).first()
         if existing:
-            raise ValueError(f"TV show with TMDB ID {tmdb_id} already exists in collection")
+            raise ValueError(f"'{existing.title}' is already in your collection. You can find it in your Shows library.")
         
         # Fetch TV show data from TMDB
         tmdb_data = await self._fetch_tmdb_data(f"/tv/{tmdb_id}")
@@ -111,6 +111,7 @@ class CollectionService:
             rating=tmdb_data.get("vote_average", 0.0),
             year=year,
             monitored=True,
+            folder_path=folder_path,  # Set folder path if provided
             # Store TMDB totals directly for fast access
             tmdb_total_episodes=tmdb_data.get("number_of_episodes", 0),
             tmdb_season_count=tmdb_data.get("number_of_seasons", 0)
@@ -129,52 +130,85 @@ class CollectionService:
         """Fetch and store seasons and episodes for a TV show from TMDB"""
         seasons_data = tmdb_data.get("seasons", [])
         
-        for season_data in seasons_data:
-            season_number = season_data.get("season_number")
-            # Skip season 0 (specials) for now, or include if you want specials
-            if season_number is None or season_number < 1:
-                continue
+        # Use a savepoint to allow rollback if there are issues
+        savepoint = None
+        try:
+            savepoint = self.db.begin_nested()  # Create a savepoint
             
-            # Create season record
-            season = Season(
-                tmdb_id=season_data.get("id"),
-                show_id=tv_show.id,
-                season_number=season_number,
-                title=season_data.get("name", f"Season {season_number}"),
-                overview=season_data.get("overview", ""),
-                poster_url=f"https://image.tmdb.org/t/p/w500{season_data['poster_path']}" if season_data.get("poster_path") else "",
-                monitored=tv_show.monitored  # Inherit from show
-            )
-            
-            self.db.add(season)
-            self.db.commit()
-            self.db.refresh(season)
-            
-            # Fetch detailed season data to get episodes
-            season_detail = await self._fetch_tmdb_data(f"/tv/{tv_show.tmdb_id}/season/{season_number}")
-            if season_detail and "episodes" in season_detail:
-                # Store the TMDB episode count for this season
-                season.tmdb_episode_count = len(season_detail["episodes"])
-                self.db.commit()
-                self.db.refresh(season)
+            for season_data in seasons_data:
+                season_number = season_data.get("season_number")
+                # Skip season 0 (specials) for now, or include if you want specials
+                if season_number is None or season_number < 1:
+                    continue
                 
-                for episode_data in season_detail["episodes"]:
-                    episode = Episode(
-                        tmdb_id=episode_data.get("id"),
-                        season_id=season.id,
-                        episode_number=episode_data.get("episode_number"),
-                        title=episode_data.get("name", f"Episode {episode_data.get('episode_number', 0)}"),
-                        overview=episode_data.get("overview", ""),
-                        air_date=episode_data.get("air_date"),
-                        runtime=episode_data.get("runtime"),
-                        monitored=season.monitored,  # Inherit from season
-                        downloaded=False  # Default to not downloaded
-                    )
+                # Check if season already exists (prevent duplicates)
+                existing_season = self.db.query(Season).filter(
+                    Season.tmdb_id == season_data.get("id")
+                ).first()
+                
+                if existing_season:
+                    print(f"Season {season_number} already exists for show {tv_show.title}, skipping")
+                    continue
+                
+                # Create season record
+                season = Season(
+                    tmdb_id=season_data.get("id"),
+                    show_id=tv_show.id,
+                    season_number=season_number,
+                    title=season_data.get("name", f"Season {season_number}"),
+                    overview=season_data.get("overview", ""),
+                    poster_url=f"https://image.tmdb.org/t/p/w500{season_data['poster_path']}" if season_data.get("poster_path") else "",
+                    monitored=tv_show.monitored  # Inherit from show
+                )
+                
+                self.db.add(season)
+                self.db.flush()  # Flush to get the ID without committing
+                
+                # Fetch detailed season data to get episodes
+                season_detail = await self._fetch_tmdb_data(f"/tv/{tv_show.tmdb_id}/season/{season_number}")
+                if season_detail and "episodes" in season_detail:
+                    # Store the TMDB episode count for this season
+                    season.tmdb_episode_count = len(season_detail["episodes"])
                     
-                    self.db.add(episode)
-                
-                # Commit all episodes for this season
-                self.db.commit()
+                    for episode_data in season_detail["episodes"]:
+                        episode_tmdb_id = episode_data.get("id")
+                        
+                        # Check if episode already exists (prevent duplicates)
+                        existing_episode = self.db.query(Episode).filter(
+                            Episode.tmdb_id == episode_tmdb_id
+                        ).first()
+                        
+                        if existing_episode:
+                            print(f"Episode {episode_data.get('episode_number')} already exists, skipping")
+                            continue
+                        
+                        episode = Episode(
+                            tmdb_id=episode_tmdb_id,
+                            season_id=season.id,
+                            episode_number=episode_data.get("episode_number"),
+                            title=episode_data.get("name", f"Episode {episode_data.get('episode_number', 0)}"),
+                            overview=episode_data.get("overview", ""),
+                            air_date=episode_data.get("air_date"),
+                            runtime=episode_data.get("runtime"),
+                            monitored=season.monitored,  # Inherit from season
+                            downloaded=False  # Default to not downloaded
+                        )
+                        
+                        self.db.add(episode)
+            
+            # Commit all changes at once
+            self.db.commit()
+            print(f"Successfully added all seasons and episodes for {tv_show.title}")
+            
+        except Exception as e:
+            # If there's an error, rollback the transaction
+            if savepoint:
+                savepoint.rollback()
+            self.db.rollback()
+            print(f"Error adding seasons/episodes for {tv_show.title}: {e}")
+            # Re-raise the exception so the caller knows there was an issue
+            # But the show itself has already been created, which is fine
+            raise e
     
     async def refresh_tv_show_episodes(self, tv_show: TVShow):
         """Refresh episodes for an existing TV show (useful for shows added before this fix)"""

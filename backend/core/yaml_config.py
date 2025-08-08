@@ -39,10 +39,33 @@ class MoviesConfig(BaseModel):
 class TVConfig(BaseModel):
     """TV Shows configuration"""
     library_paths: list[MediaDirectory] = []
-    # Future TV-specific settings can go here
     quality_profiles: list[str] = ["HD-1080p", "HD-720p", "SD"]
     auto_search: bool = True
+    
+    # TrashGuides Naming Convention Settings
+    # Show Folder Format - Example: "The Expanse (2015)"
+    show_folder_format: str = "{show_name} ({year})"
+    
+    # Season Folder Format - Example: "Season 01" 
     season_folder_format: str = "Season {season:02d}"
+    
+    # Standard Episode Format - Example: "The Expanse - S01E01 - Dulcinea [WEBDL-1080p][x264][DTS][AMZN]"
+    episode_format: str = "{show_name} - S{season:02d}E{episode:02d} - {episode_title} [{quality}][{video_codec}][{audio_codec}][{release_group}]"
+    
+    # Daily Episode Format (for daily shows) - Example: "The Daily Show - 2020-03-15 - Episode Title [WEBDL-1080p][x264][AAC][CC]"
+    daily_episode_format: str = "{show_name} - {air_date} - {episode_title} [{quality}][{video_codec}][{audio_codec}][{release_group}]"
+    
+    # Anime Episode Format - Example: "Attack on Titan - S01E01 - To You, in 2000 Years [WEBDL-1080p][x264][AAC][Funimation]"
+    anime_episode_format: str = "{show_name} - S{season:02d}E{episode:02d} - {episode_title} [{quality}][{video_codec}][{audio_codec}][{release_group}]"
+    
+    # Multi-Episode Format - Example: "The Expanse - S01E01-E02 - Dulcinea + The Big Empty [WEBDL-1080p][x264][DTS][AMZN]"
+    multi_episode_format: str = "{show_name} - S{season:02d}E{episode_start}-E{episode_end} - {episode_titles} [{quality}][{video_codec}][{audio_codec}][{release_group}]"
+    
+    # Additional naming options
+    include_year_in_folder: bool = True     # Whether to include year in show folder names
+    clean_special_chars: bool = True        # Remove/replace problematic characters
+    replace_spaces_with: str = " "          # Character to replace spaces with
+    use_original_title: bool = False        # Use original title instead of translated title when available
 
 
 class UsersConfig(BaseModel):

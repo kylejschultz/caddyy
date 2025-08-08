@@ -14,6 +14,7 @@ export interface MonitoringDropdownProps {
   onChange: (value: MonitoringOption) => void
   disabled?: boolean
   className?: string
+  inModal?: boolean // New prop to handle modal context
 }
 
 const monitoringOptions: Array<{
@@ -64,7 +65,8 @@ export default function MonitoringDropdown({
   value, 
   onChange, 
   disabled = false,
-  className = '' 
+  className = '',
+  inModal = false 
 }: MonitoringDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [dropdownPosition, setDropdownPosition] = useState<'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'>('bottom-left')
@@ -79,8 +81,8 @@ export default function MonitoringDropdown({
       const buttonRect = buttonRef.current.getBoundingClientRect()
       const viewportWidth = window.innerWidth
       const viewportHeight = window.innerHeight
-      const dropdownWidth = 288 // w-72 = 18rem = 288px
-      const dropdownHeight = 350 // Approximate height of dropdown
+      const dropdownWidth = 256 // w-64 = 16rem = 256px (reduced from 288px)
+      const dropdownHeight = 280 // Approximate height of dropdown (reduced from 350px)
       
       let position: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right' = 'bottom-left'
       
@@ -127,7 +129,9 @@ export default function MonitoringDropdown({
 
   // Get positioning classes based on calculated position
   const getDropdownClasses = () => {
-    const baseClasses = 'absolute mt-1 w-72 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50'
+    // Use higher z-index when in modal to appear over modal content
+    const zIndex = inModal ? 'z-[60]' : 'z-50'
+    const baseClasses = `absolute mt-1 w-64 bg-slate-800 border border-slate-600 rounded-lg shadow-xl ${zIndex}`
     
     switch (dropdownPosition) {
       case 'bottom-left':
@@ -168,26 +172,26 @@ export default function MonitoringDropdown({
       {/* Dropdown Menu */}
       {isOpen && (
         <div className={getDropdownClasses()}>
-          <div className="py-1">
+          <div className="py-0.5">
             {monitoringOptions.map((option) => (
               <button
                 key={option.value}
                 onClick={() => handleOptionSelect(option.value)}
                 className={`
-                  w-full text-left px-4 py-3 hover:bg-slate-700 transition-colors flex items-center justify-between
+                  w-full text-left px-3 py-2 hover:bg-slate-700 transition-colors flex items-center justify-between
                   ${value === option.value ? 'bg-slate-700' : ''}
                 `}
               >
                 <div className="flex-1">
-                  <div className={`font-medium ${option.color}`}>
+                  <div className={`text-sm font-medium ${option.color}`}>
                     {option.label}
                   </div>
-                  <div className="text-xs text-slate-400 mt-1">
+                  <div className="text-xs text-slate-400 mt-0.5 leading-tight">
                     {option.description}
                   </div>
                 </div>
                 {value === option.value && (
-                  <CheckCircle className="w-4 h-4 text-blue-400 flex-shrink-0 ml-2" />
+                  <CheckCircle className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 ml-2" />
                 )}
               </button>
             ))}
