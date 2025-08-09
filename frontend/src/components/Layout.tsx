@@ -1,23 +1,24 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { 
-  Home, 
-  Film, 
-  Tv, 
-  Download, 
-  Settings,
+import {
   Activity,
-  Search,
+} from 'lucide-react'
+import {
+  House,
+  FilmSlate,
+  Television,
+  DownloadSimple,
+  Gear,
+  MagnifyingGlass,
   User,
   Shield,
-  ChevronDown,
-  ChevronRight,
-  Library,
-  Cog,
+  CaretDown,
+  CaretRight,
+  SquaresFour,
   Clock,
   List,
-  Upload
-} from 'lucide-react'
+  UploadSimple
+} from '@phosphor-icons/react'
 import clsx from 'clsx'
 
 interface LayoutProps {
@@ -31,45 +32,56 @@ interface NavigationItem {
   children?: NavigationItem[]
 }
 
-const navigation: NavigationItem[] = [
-  { name: 'Dashboard', href: '/', icon: Home },
-  { 
-    name: 'Movies', 
-    href: '/movies', 
-    icon: Film,
-    children: [
-      { name: 'Collection', href: '/movies', icon: Library },
-      { name: 'Settings', href: '/movies/settings', icon: Cog },
-    ]
+const dashboardItem: NavigationItem = { name: 'Dashboard', href: '/', icon: House }
+
+const navigationGroups: { title: string; items: NavigationItem[] }[] = [
+  {
+    title: 'Library',
+    items: [
+      {
+        name: 'Movies',
+        href: '/movies',
+        icon: FilmSlate,
+        children: [
+          { name: 'Collection', href: '/movies', icon: SquaresFour },
+          { name: 'Settings', href: '/movies/settings', icon: Gear },
+        ],
+      },
+      {
+        name: 'TV Shows',
+        href: '/shows',
+        icon: Television,
+        children: [
+          { name: 'Collection', href: '/shows', icon: SquaresFour },
+          { name: 'Import', href: '/shows/import', icon: UploadSimple },
+          { name: 'Settings', href: '/shows/settings', icon: Gear },
+        ],
+      },
+    ],
   },
-  { 
-    name: 'TV Shows', 
-    href: '/shows', 
-    icon: Tv,
-    children: [
-      { name: 'Collection', href: '/shows', icon: Library },
-      { name: 'Import', href: '/shows/import', icon: Upload },
-      { name: 'Settings', href: '/shows/settings', icon: Cog },
-    ]
-  },
-  { 
-    name: 'Monitor', 
-    href: '/monitor', 
-    icon: Download,
-    children: [
-      { name: 'Queue', href: '/monitor/queue', icon: Clock },
-      { name: 'History', href: '/monitor/history', icon: List },
-    ]
-  },
-  { 
-    name: 'Settings', 
-    href: '/settings', 
-    icon: Settings,
-    children: [
-      { name: 'General', href: '/settings/general', icon: Settings },
-      { name: 'Users', href: '/settings/users', icon: User },
-      { name: 'Security', href: '/settings/security', icon: Shield },
-    ]
+  {
+    title: 'System',
+    items: [
+      {
+        name: 'Monitor',
+        href: '/monitor',
+        icon: DownloadSimple,
+        children: [
+          { name: 'Queue', href: '/monitor/queue', icon: List },
+          { name: 'History', href: '/monitor/history', icon: Clock },
+        ],
+      },
+      {
+        name: 'Settings',
+        href: '/settings',
+        icon: Gear,
+        children: [
+          { name: 'General', href: '/settings/general', icon: Gear },
+          { name: 'Users', href: '/settings/users', icon: User },
+          { name: 'Security', href: '/settings/security', icon: Shield },
+        ],
+      },
+    ],
   },
 ]
 
@@ -77,7 +89,7 @@ export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
-  const [expandedItems, setExpandedItems] = useState<string[]>([]) 
+  const [expandedItems, setExpandedItems] = useState<string | null>(null)
 
   // Auto-expand navigation sections based on current path
   useEffect(() => {
@@ -85,15 +97,15 @@ export default function Layout({ children }: LayoutProps) {
     const currentSection = pathSegments[0]
     
     let sectionToExpand = null
-    if (currentSection === 'movies') sectionToExpand = 'Movies'
-    else if (currentSection === 'shows') sectionToExpand = 'TV Shows'
+    if (currentSection === 'movies' || currentSection === 'movie') sectionToExpand = 'Movies'
+    else if (currentSection === 'shows' || currentSection === 'tv') sectionToExpand = 'TV Shows'
     else if (currentSection === 'monitor') sectionToExpand = 'Monitor'
     else if (currentSection === 'settings') sectionToExpand = 'Settings'
     
     if (sectionToExpand) {
-      setExpandedItems(prev => 
-        prev.includes(sectionToExpand) ? prev : [...prev, sectionToExpand]
-      )
+      setExpandedItems(sectionToExpand)
+    } else {
+      setExpandedItems(null)
     }
   }, [location.pathname])
 
@@ -105,18 +117,14 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   const renderNavigationItem = (item: NavigationItem) => {
-    const isActive = item.href === '/' 
-      ? location.pathname === '/' 
+    const isActive = item.href === '/'
+      ? location.pathname === '/'
       : location.pathname.startsWith(item.href!)
 
-    const isExpanded = expandedItems.includes(item.name)
+    const isExpanded = expandedItems === item.name
 
     const toggleExpand = () => {
-      setExpandedItems(prev =>
-        prev.includes(item.name)
-          ? prev.filter(n => n !== item.name)
-          : [...prev, item.name]
-      )
+      setExpandedItems(prev => (prev === item.name ? null : item.name))
     }
 
     return (
@@ -148,34 +156,47 @@ export default function Layout({ children }: LayoutProps) {
                 <item.icon className="w-5 h-5 mr-3" />
                 {item.name}
               </div>
-              {isExpanded ? <ChevronDown /> : <ChevronRight />}
+              {isExpanded ? <CaretDown /> : <CaretRight />}
             </div>
             {isExpanded && item.children && (
               <ul className="mt-1 space-y-1 ml-3 border-l border-gray-200 dark:border-slate-700">
-                {item.children.map((child) => (
-                  <li key={child.name}>
-                    <Link
-                      to={child.href!}
-                      onClick={() => {
-                        if (!location.pathname.startsWith(child.href!)) {
-                          setSearchQuery('')
-                        }
-                      }}
-                      className={clsx(
-                        'flex items-center pl-4 pr-3 py-2 text-sm transition-colors rounded-r-md',
-                        location.pathname === child.href
-                          ? 'bg-blue-600/30 text-gray-900 dark:text-white font-semibold border-l-2 border-blue-400'
-                          : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100/40 dark:hover:bg-slate-800/40 hover:text-gray-700 dark:hover:text-slate-200 font-normal'
-                      )}
-                    >
-                      <child.icon className={clsx(
-                        'w-4 h-4 mr-3',
-                        location.pathname === child.href ? 'text-blue-400 dark:text-blue-300' : ''
-                      )} />
-                      {child.name}
-                    </Link>
-                  </li>
-                ))}
+                {item.children.map((child) => {
+                  const path = location.pathname
+                  const isCollectionChild = child.name === 'Collection'
+                  let isChildActive = path === child.href
+                  if (isCollectionChild) {
+                    if (item.name === 'Movies') {
+                      isChildActive = path.startsWith('/movies') || path.startsWith('/movie/')
+                    } else if (item.name === 'TV Shows') {
+                      isChildActive = path.startsWith('/shows') || path.startsWith('/tv/')
+                    }
+                  }
+
+                  return (
+                    <li key={child.name}>
+                      <Link
+                        to={child.href!}
+                        onClick={() => {
+                          if (!path.startsWith(child.href!)) {
+                            setSearchQuery('')
+                          }
+                        }}
+                        className={clsx(
+                          'flex items-center pl-4 pr-3 py-2 text-sm transition-colors rounded-r-md',
+                          isChildActive
+                            ? 'bg-blue-600/30 text-gray-900 dark:text-white font-semibold border-l-2 border-blue-400'
+                            : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100/40 dark:hover:bg-slate-800/40 hover:text-gray-700 dark:hover:text-slate-200 font-normal'
+                        )}
+                      >
+                        <child.icon className={clsx(
+                          'w-4 h-4 mr-3',
+                          isChildActive ? 'text-blue-400 dark:text-blue-300' : ''
+                        )} />
+                        {child.name}
+                      </Link>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>
@@ -214,9 +235,9 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           </div>
           
-          <div className="px-6 pb-4 flex-shrink-0">
+        <div className="px-6 pb-4 flex-shrink-0">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-400" />
+              <MagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-400" />
               <input
                 type="text"
                 placeholder="Search movies & TV shows..."
@@ -230,7 +251,11 @@ export default function Layout({ children }: LayoutProps) {
           
           <nav className="px-3 flex-1 overflow-y-auto">
             <ul className="space-y-1">
-              {navigation.map(renderNavigationItem)}
+              {renderNavigationItem(dashboardItem)}
+              <li className="px-3 pt-4 pb-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Library</li>
+              {navigationGroups[0].items.map(renderNavigationItem)}
+              <li className="px-3 pt-4 pb-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">System</li>
+              {navigationGroups[1].items.map(renderNavigationItem)}
             </ul>
           </nav>
         </div>
