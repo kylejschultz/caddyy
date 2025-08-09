@@ -42,7 +42,7 @@ Currently, there is no full deployment mechanism. Follow the steps in Developmen
 
 1. **Clone and setup**:
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/kylejschultz/caddyy
    cd caddyy
    ```
 
