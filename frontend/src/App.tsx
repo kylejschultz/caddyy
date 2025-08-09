@@ -8,6 +8,8 @@ import Downloads from './pages/Downloads'
 import Settings from './pages/SettingsGeneral'
 import MoviesSettings from './pages/MoviesSettings'
 import ShowsSettings from './pages/ShowsSettings'
+import LibrariesSettings from './pages/LibrariesSettings'
+import LibraryView from './pages/LibraryView'
 import Queue from './pages/Queue'
 import History from './pages/History'
 import Search from './pages/Search'
@@ -45,6 +47,8 @@ function App() {
             <Route path="/settings/general" element={<Settings />} />
             <Route path="/settings/users" element={<Settings />} />
             <Route path="/settings/security" element={<Settings />} />
+            <Route path="/settings/libraries" element={<LibrariesSettings />} />
+            <Route path="/libraries/:id" element={<LibraryView />} />
           </Routes>
         </Layout>
       </Router>

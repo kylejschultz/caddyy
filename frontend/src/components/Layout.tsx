@@ -11,15 +11,14 @@ import {
   Shield,
   CaretDown,
   CaretRight,
-  SquaresFour,
   Clock,
   List,
-  UploadSimple,
   Pulse,
   CaretDoubleLeft,
   CaretDoubleRight,
   Broadcast,
-  GithubLogo
+  GithubLogo,
+  Folder
 } from '@phosphor-icons/react'
 import clsx from 'clsx'
 
@@ -34,58 +33,39 @@ interface NavigationItem {
   children?: NavigationItem[]
 }
 
+interface UILibrary {
+  id: number
+  name: string
+  media_type: 'movies' | 'tv'
+}
+
 const dashboardItem: NavigationItem = { name: 'Dashboard', href: '/', icon: House }
 
-const navigationGroups: { title: string; items: NavigationItem[] }[] = [
-  {
-    title: 'Library',
-    items: [
-      {
-        name: 'Movies',
-        href: '/movies',
-        icon: FilmSlate,
-        children: [
-          { name: 'Collection', href: '/movies', icon: SquaresFour },
-          { name: 'Settings', href: '/movies/settings', icon: Gear },
-        ],
-      },
-      {
-        name: 'TV Shows',
-        href: '/shows',
-        icon: Television,
-        children: [
-          { name: 'Collection', href: '/shows', icon: SquaresFour },
-          { name: 'Import', href: '/shows/import', icon: UploadSimple },
-          { name: 'Settings', href: '/shows/settings', icon: Gear },
-        ],
-      },
-    ],
-  },
-  {
-    title: 'System',
-    items: [
-      {
-        name: 'Monitor',
-        href: '/monitor',
-        icon: DownloadSimple,
-        children: [
-          { name: 'Queue', href: '/monitor/queue', icon: List },
-          { name: 'History', href: '/monitor/history', icon: Clock },
-        ],
-      },
-      {
-        name: 'Settings',
-        href: '/settings',
-        icon: Gear,
-        children: [
-          { name: 'General', href: '/settings/general', icon: Gear },
-          { name: 'Users', href: '/settings/users', icon: User },
-          { name: 'Security', href: '/settings/security', icon: Shield },
-        ],
-      },
-    ],
-  },
-]
+const systemGroup: { title: string; items: NavigationItem[] } = {
+  title: 'System',
+  items: [
+    {
+      name: 'Monitor',
+      href: '/monitor',
+      icon: DownloadSimple,
+      children: [
+        { name: 'Queue', href: '/monitor/queue', icon: List },
+        { name: 'History', href: '/monitor/history', icon: Clock },
+      ],
+    },
+    {
+      name: 'Settings',
+      href: '/settings',
+      icon: Gear,
+      children: [
+        { name: 'General', href: '/settings/general', icon: Gear },
+        { name: 'Libraries', href: '/settings/libraries', icon: Folder },
+        { name: 'Users', href: '/settings/users', icon: User },
+        { name: 'Security', href: '/settings/security', icon: Shield },
+      ],
+    },
+  ],
+}
 
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
@@ -93,6 +73,7 @@ export default function Layout({ children }: LayoutProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedItems, setExpandedItems] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [libraries, setLibraries] = useState<UILibrary[]>([])
 
   // Auto-expand navigation sections based on current path
   useEffect(() => {
@@ -100,8 +81,8 @@ export default function Layout({ children }: LayoutProps) {
     const currentSection = pathSegments[0]
     
     let sectionToExpand: string | null = null
-    if (currentSection === 'movies' || currentSection === 'movie') sectionToExpand = 'Movies'
-    else if (currentSection === 'shows' || currentSection === 'tv') sectionToExpand = 'TV Shows'
+    if (currentSection === 'movies' || currentSection === 'movie') sectionToExpand = 'Library'
+    else if (currentSection === 'shows' || currentSection === 'tv') sectionToExpand = 'Library'
     else if (currentSection === 'monitor') sectionToExpand = 'Monitor'
     else if (currentSection === 'settings') sectionToExpand = 'Settings'
     
@@ -111,6 +92,25 @@ export default function Layout({ children }: LayoutProps) {
       setExpandedItems(null)
     }
   }, [location.pathname])
+
+  // Fetch libraries to show in sidebar
+  useEffect(() => {
+    let ignore = false
+    const load = async () => {
+      try {
+        const res = await fetch('/api/libraries')
+        if (!res.ok) throw new Error('failed')
+        const data: UILibrary[] = await res.json()
+        if (!ignore) setLibraries(data)
+      } catch {
+        if (!ignore) setLibraries([])
+      } finally {
+        // no-op
+      }
+    }
+    load()
+    return () => { ignore = true }
+  }, [])
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && searchQuery.trim()) {
@@ -302,11 +302,19 @@ export default function Layout({ children }: LayoutProps) {
               {!isCollapsed && (
                 <li className="px-3 pt-4 pb-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Library</li>
               )}
-              {navigationGroups[0].items.map(renderNavigationItem)}
+              {(libraries.length > 0 ? libraries : [{ id: -1, name: 'Movies', media_type: 'movies' }, { id: -2, name: 'TV Shows', media_type: 'tv' } as UILibrary])
+                .map((lib) => {
+                  const item: NavigationItem = {
+                    name: lib.name,
+                    href: `/libraries/${lib.id}`,
+                    icon: lib.media_type === 'movies' ? FilmSlate : Television,
+                  }
+                  return renderNavigationItem(item)
+                })}
               {!isCollapsed && (
                 <li className="px-3 pt-4 pb-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">System</li>
               )}
-              {navigationGroups[1].items.map(renderNavigationItem)}
+          {systemGroup.items.map(renderNavigationItem)}
             </ul>
           </nav>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
@@ -52,10 +52,6 @@ interface TVShowDetails {
   total_episodes_count?: number
 }
 
-interface LibraryPathOption {
-  name: string
-  path: string
-}
 // Interfaces now imported from SeasonAccordion component
 
 export default function TVShowDetail() {
@@ -229,18 +225,66 @@ export default function TVShowDetail() {
     setExpandedSeasons(newExpanded)
   }
 
-  // Fetch TV library paths for path selector (used when in collection)
-  const { data: tvLibPaths } = useQuery<{ library_paths: LibraryPathOption[] }>({
-    queryKey: ['tv-library-paths'],
+  // Load libraries and disks (folders) for disk management
+  const { data: libraries } = useQuery({
+    queryKey: ['libraries'],
     queryFn: async () => {
-      const res = await axios.get('/api/config/tv/library-paths')
-      // Normalize to { library_paths: LibraryPathOption[] }
-      const paths: LibraryPathOption[] = Array.isArray(res.data)
-        ? res.data
-        : res.data?.library_paths || []
-      return { library_paths: paths }
+      const response = await axios.get('/api/libraries')
+      return response.data as Array<{ id: number; name: string; media_type: 'movies' | 'tv' }>
     }
   })
+
+  const [selectedLibraryId, setSelectedLibraryId] = useState<number | null>(null)
+  const { data: disks } = useQuery({
+    queryKey: ['library-disks', selectedLibraryId],
+    queryFn: async () => {
+      if (!selectedLibraryId) return [] as Array<{ id: number; name: string; path: string }>
+      const response = await axios.get(`/api/libraries/${selectedLibraryId}/folders`)
+      return response.data as Array<{ id: number; name: string; path: string }>
+    },
+    enabled: !!selectedLibraryId
+  })
+
+  // Determine library and disk based on the show's current folder_path
+  const [selectedDiskId, setSelectedDiskId] = useState<number | undefined>(undefined)
+  const [diskOptions, setDiskOptions] = useState<Array<{ id: number; name: string; path: string }>>([])
+
+  useEffect(() => {
+    if (libraries && libraries.length > 0 && !selectedLibraryId) {
+      // Pick first TV library
+      const tvLib = libraries.find(l => l.media_type === 'tv') || libraries[0]
+      setSelectedLibraryId(tvLib.id)
+    }
+  }, [libraries, selectedLibraryId])
+
+  useEffect(() => {
+    if (!disks) return
+    setDiskOptions(disks)
+    // Infer current disk from show.folder_path
+    if (show?.folder_path) {
+      const match = disks.find(d => show.folder_path!.startsWith(d.path))
+      if (match) setSelectedDiskId(match.id)
+    }
+  }, [disks, show?.folder_path])
+
+  // Change disk handler
+  const handleChangeDisk = (diskId: number) => {
+    if (!show?.in_collection || !selectedLibraryId) return
+    axios
+      .patch(`/api/collection/tv/${show.id}/location`, {
+        library_id: selectedLibraryId,
+        disk_id: diskId,
+        create_folders: true,
+      })
+      .then(() => {
+        setSelectedDiskId(diskId)
+        queryClient.invalidateQueries({ queryKey: ['tv-show', id] })
+      })
+      .catch((err) => {
+        console.error('Failed to move show between disks:', err)
+        alert('Failed to move show. Please check server logs and try again.')
+      })
+  }
 
   if (isLoading) {
     return (
@@ -470,10 +514,11 @@ export default function TVShowDetail() {
                           onChange={(option) => updateMonitoringMutation.mutate(option)}
                           disabled={updateMonitoringMutation.isPending}
                         />
+                        {/* Disk selector using library/disk IDs */}
                         <DiskDropdown
-                          value={show.library_path_name || ''}
-                          options={(tvLibPaths?.library_paths || [{ name: show.library_path_name || 'Unknown', path: show.folder_path || '' }])}
-                          onChange={() => { /* Future: update library path */ }}
+                          value={selectedDiskId}
+                          options={diskOptions}
+                          onChange={(diskId) => handleChangeDisk(diskId)}
                         />
                       </div>
                     </>

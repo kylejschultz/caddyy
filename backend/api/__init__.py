@@ -14,6 +14,7 @@ try:
     from backend.api.media_paths import router as media_paths_router
     from backend.api.collection import router as collection_router
     from backend.api.import_media import router as import_router
+    from backend.api.libraries import router as libraries_router
     from backend.routers.config.movies import router as movies_config_router
     from backend.routers.config.tv import router as tv_config_router
 except ImportError:
@@ -27,6 +28,7 @@ except ImportError:
     from api.media_paths import router as media_paths_router
     from api.collection import router as collection_router
     from api.import_media import router as import_router
+    from api.libraries import router as libraries_router
     from routers.config.movies import router as movies_config_router
     from routers.config.tv import router as tv_config_router
 
@@ -41,5 +43,6 @@ router.include_router(filesystem_router, prefix="/filesystem", tags=["filesystem
 router.include_router(media_paths_router, prefix="/media-paths", tags=["media-paths"])
 router.include_router(collection_router, tags=["collection"])
 router.include_router(import_router, prefix="/import", tags=["import"])
+router.include_router(libraries_router, prefix="/libraries", tags=["libraries"]) 
 router.include_router(movies_config_router, prefix="/config/movies", tags=["movies-config"])
 router.include_router(tv_config_router, prefix="/config/tv", tags=["tv-config"])

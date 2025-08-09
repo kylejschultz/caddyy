@@ -9,10 +9,28 @@ from typing import Any, Dict
 
 
 class MediaDirectory(BaseModel):
-    """Media directory configuration"""
+    """Media directory configuration (legacy)"""
     name: str
     path: str
     enabled: bool = True
+
+class LibraryFolder(BaseModel):
+    """Folder belonging to a Library (Plex-style)"""
+    id: int
+    name: str
+    path: str
+    enabled: bool = True
+    priority: int = 0  # smaller number = higher priority (0 is primary)
+
+class Library(BaseModel):
+    """Plex-style Library grouping content by media type with one or more folders"""
+    id: int
+    name: str
+    media_type: str  # 'movies' | 'tv'
+    enabled: bool = True
+    sort_order: int = 0
+    tags: list[str] = []
+    folders: list[LibraryFolder] = []
 
 
 class GeneralConfig(BaseModel):
@@ -85,6 +103,7 @@ class AppConfig(BaseModel):
     tv: TVConfig = TVConfig()
     users: UsersConfig = UsersConfig()
     security: SecurityConfig = SecurityConfig()
+    libraries: list[Library] = []  # Plex-style libraries
     
     class Config:
         extra = "allow"

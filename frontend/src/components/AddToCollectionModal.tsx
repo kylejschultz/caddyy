@@ -32,6 +32,8 @@ interface AddToCollectionResponse {
   title: string
   folder_path?: string
   folder_created?: boolean
+  library_id?: number
+  disk_id?: number
   [key: string]: any
 }
 
@@ -47,51 +49,70 @@ export default function AddToCollectionModal({
   onSuccess 
 }: AddToCollectionModalProps) {
   const [monitoringStatus, setMonitoringStatus] = useState<MonitoringOption>('All Episodes')
-  const [selectedLibraryPath, setSelectedLibraryPath] = useState('')
+  const [selectedLibraryId, setSelectedLibraryId] = useState<number | ''>('')
+  const [selectedDiskId, setSelectedDiskId] = useState<number | ''>('')
   const [createFolder, setCreateFolder] = useState(true)
   const [showToast, setShowToast] = useState(false)
   const [addedShowData, setAddedShowData] = useState<AddToCollectionResponse | null>(null)
 
-  // Query to get available library paths
-  const { data: libraryPaths, isLoading: isLoadingPaths } = useQuery({
-    queryKey: ['tv-library-paths'],
+  // Load libraries
+  const { data: libraries, isLoading: isLoadingLibraries } = useQuery({
+    queryKey: ['libraries'],
     queryFn: async () => {
-      const response = await axios.get('/api/collection/library/tv/paths')
-      return response.data
+      const response = await axios.get('/api/libraries')
+      return response.data as Array<{ id: number; name: string; media_type: 'movies' | 'tv' }>
     },
     enabled: isOpen
   })
 
-  // Set default library path when paths are loaded
+  // Load disks for selected library
+  const { data: disks, isLoading: isLoadingDisks } = useQuery({
+    queryKey: ['library-disks', selectedLibraryId],
+    queryFn: async () => {
+      if (!selectedLibraryId) return []
+      const response = await axios.get(`/api/libraries/${selectedLibraryId}/folders`)
+      return response.data as Array<{ id: number; name: string; path: string; enabled: boolean }>
+    },
+    enabled: isOpen && !!selectedLibraryId
+  })
+
+  // Default selections when data loads
   useEffect(() => {
-    if (libraryPaths?.paths?.length > 0 && !selectedLibraryPath) {
-      setSelectedLibraryPath(libraryPaths.paths[0].path)
+    if (libraries && libraries.length > 0 && selectedLibraryId === '') {
+      // Prefer a TV library by default
+      const tvLib = libraries.find(l => l.media_type === 'tv') || libraries[0]
+      setSelectedLibraryId(tvLib.id)
     }
-  }, [libraryPaths, selectedLibraryPath])
+  }, [libraries, selectedLibraryId])
+
+  useEffect(() => {
+    if (disks && disks.length > 0 && selectedDiskId === '') {
+      setSelectedDiskId(disks[0].id)
+    }
+  }, [disks, selectedDiskId])
 
   const addToCollectionMutation = useMutation({
     mutationFn: async (data: { 
       tmdb_id: number, 
       monitoring_status: string, 
-      library_path?: string, 
+      library_id: number, 
+      disk_id: number, 
       create_folder?: boolean 
     }) => {
-      // Add the show to collection with disk selection and folder creation
-      const params: any = { tmdb_id: data.tmdb_id }
-      
-      if (data.library_path) {
-        params.library_path = data.library_path
+      // Add the show to collection with library/disk IDs
+      const params: any = { 
+        tmdb_id: data.tmdb_id,
+        library_id: data.library_id,
+        disk_id: data.disk_id,
       }
-      
+
       if (data.create_folder !== undefined) {
         params.create_folder = data.create_folder
       }
       
       // Include monitoring status in the initial request
-      // Use the same field name as the update monitoring mutation
       if (data.monitoring_status) {
         params.monitoring = data.monitoring_status
-        // Also try alternative field names in case the API expects something different
         params.monitoring_option = data.monitoring_status
         params.monitoring_status = data.monitoring_status
       }
@@ -129,10 +150,12 @@ export default function AddToCollectionModal({
   }
 
   const handleAddToCollection = () => {
+    if (!selectedLibraryId || !selectedDiskId) return
     addToCollectionMutation.mutate({
       tmdb_id: parseInt(showId),
       monitoring_status: monitoringStatus,
-      library_path: selectedLibraryPath || undefined,
+      library_id: selectedLibraryId as number,
+      disk_id: selectedDiskId as number,
       create_folder: createFolder
     })
   }
@@ -215,52 +238,83 @@ export default function AddToCollectionModal({
             />
           </div>
 
-          {/* Library Path Selection */}
+          {/* Library and Disk Selection */}
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-2">
               <div className="flex items-center space-x-2">
                 <HardDrive className="w-4 h-4" />
-                <span>Library Path</span>
+                <span>Library and Disk</span>
               </div>
             </label>
-            {isLoadingPaths ? (
+
+            {/* Library select */}
+            {isLoadingLibraries ? (
               <div className="flex items-center space-x-2 text-slate-400 p-3 bg-slate-700 rounded-lg">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Loading library paths...</span>
+                <span>Loading libraries...</span>
               </div>
-            ) : libraryPaths?.paths?.length > 0 ? (
-              <select
-                value={selectedLibraryPath}
-                onChange={(e) => setSelectedLibraryPath(e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {libraryPaths.paths.map((path: any) => (
-                  <option key={path.path} value={path.path}>
-                    {path.name} - {path.path}
-                  </option>
-                ))}
-              </select>
+            ) : libraries && libraries.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <select
+                  value={selectedLibraryId}
+                  onChange={(e) => {
+                    const val = e.target.value ? parseInt(e.target.value) : ''
+                    setSelectedLibraryId(val)
+                    setSelectedDiskId('')
+                  }}
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {libraries
+                    .filter((l: any) => l.media_type === 'tv')
+                    .map((lib: any) => (
+                      <option key={lib.id} value={lib.id}>
+                        {lib.name}
+                      </option>
+                    ))}
+                </select>
+
+                {/* Disk select */}
+                {isLoadingDisks ? (
+                  <div className="flex items-center space-x-2 text-slate-400 p-3 bg-slate-700 rounded-lg">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Loading disks...</span>
+                  </div>
+                ) : (
+                  <select
+                    value={selectedDiskId}
+                    onChange={(e) => setSelectedDiskId(e.target.value ? parseInt(e.target.value) : '')}
+                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={!selectedLibraryId}
+                  >
+                    {(disks || []).map((d: any) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} - {d.path}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
             ) : (
               <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3">
                 <div className="flex items-center space-x-2 text-yellow-400">
                   <AlertCircle className="w-4 h-4" />
-                  <span className="text-sm font-medium">No library paths configured</span>
+                  <span className="text-sm font-medium">No libraries configured</span>
                 </div>
                 <p className="text-yellow-300 text-xs mt-1">
-                  Configure TV library paths in Settings → TV Shows to enable folder creation.
+                  Create a TV library and add disks in Settings → Libraries.
                 </p>
               </div>
             )}
-            
-            {selectedLibraryPath && (
+
+            {selectedLibraryId && selectedDiskId && (
               <p className="text-xs text-slate-500 mt-2">
-                Show will be added to this library location.
+                Show will be added to the selected disk in this library.
               </p>
             )}
           </div>
 
           {/* Folder Creation Options */}
-          {selectedLibraryPath && (
+          {selectedLibraryId && selectedDiskId && (
             <div>
               <div className="flex items-center space-x-2 mb-2">
                 <input
@@ -282,7 +336,7 @@ export default function AddToCollectionModal({
                 <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 ml-6">
                   <p className="text-blue-300 text-sm font-medium">Folder Preview:</p>
                   <p className="text-blue-200 text-xs mt-1 font-mono">
-                    {selectedLibraryPath}/{showName}{showYear ? ` (${showYear})` : ''}/
+                    {`<selected disk>`}/{showName}{showYear ? ` (${showYear})` : ''}/
                     <br />
                     ├── Season 01/
                     <br />
@@ -370,7 +424,7 @@ export default function AddToCollectionModal({
         type="success"
         title="Show Added Successfully!"
         message={`"${showName}" has been added to your collection with monitoring set to "${addedShowData?.monitoring_option || monitoringStatus}".${addedShowData?.folder_created ? ` Folders were created at: ${addedShowData.folder_path}` : ''}`}
-        duration={4000} // Auto close after 4 seconds
+        duration={4000}
         onClose={() => setShowToast(false)}
       />
     </>

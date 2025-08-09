@@ -25,7 +25,8 @@ import_sessions: Dict[str, Dict] = {}
 
 class ImportSessionRequest(BaseModel):
     media_type: str  # "tv" or "movies"
-    library_paths: List[str]
+    library_id: int
+    disk_ids: List[int]
 
 class ImportSessionStatus(BaseModel):
     session_id: str
@@ -62,32 +63,25 @@ async def start_import_session(
     if request.media_type not in ["tv", "movies"]:
         raise HTTPException(status_code=400, detail="Media type must be 'tv' or 'movies'")
     
-    # Validate library paths
-    if not request.library_paths:
-        raise HTTPException(status_code=400, detail="At least one library path is required")
-    
-    # Get configuration to validate paths
+    # Validate library and disk IDs
+    if not request.disk_ids:
+        raise HTTPException(status_code=400, detail="At least one disk_id is required")
+
+    # Get configuration to resolve IDs to paths
     config = config_manager.get_config()
-    
-    # For TV shows, check configured TV paths
-    if request.media_type == "tv":
-        configured_paths = [path.path for path in config.tv.library_paths]
-        for path in request.library_paths:
-            if path not in configured_paths:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Path '{path}' is not configured as a TV library path"
-                )
-    
-    # For movies, check configured movie paths  
-    elif request.media_type == "movies":
-        configured_paths = [path.path for path in config.movies.library_paths]
-        for path in request.library_paths:
-            if path not in configured_paths:
-                raise HTTPException(
-                    status_code=400, 
-                    detail=f"Path '{path}' is not configured as a movie library path"
-                )
+    library = next((l for l in config.libraries if l.id == request.library_id), None)
+    if not library:
+        raise HTTPException(status_code=400, detail="Invalid library_id")
+    if request.media_type != library.media_type:
+        raise HTTPException(status_code=400, detail="library_id media_type does not match request media_type")
+
+    # Resolve disk IDs to base paths
+    resolved_paths: List[str] = []
+    for did in request.disk_ids:
+        folder = next((f for f in library.folders if f.id == did and f.enabled), None)
+        if not folder:
+            raise HTTPException(status_code=400, detail=f"Invalid or disabled disk_id: {did}")
+        resolved_paths.append(folder.path)
     
     # Generate session ID
     session_id = f"import_{request.media_type}_{int(datetime.now().timestamp())}"
@@ -95,7 +89,9 @@ async def start_import_session(
     # Initialize session
     import_sessions[session_id] = {
         "media_type": request.media_type,
-        "library_paths": request.library_paths,
+        "library_id": request.library_id,
+        "disk_ids": request.disk_ids,
+        "library_paths": resolved_paths,
         "status": "scanning",
         "progress": 0.0,
         "message": "Starting scan...",

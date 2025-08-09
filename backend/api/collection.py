@@ -138,6 +138,126 @@ def remove_movie(movie_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Movie removed from collection"}
 
+# Location management (placeholder for moving show between disks)
+@router.patch("/tv/{show_id}/location")
+async def update_tv_show_location(show_id: int, data: dict, db: Session = Depends(get_db)):
+    """Move a TV show to a different disk within a library."""
+    from backend.core.yaml_config import config_manager
+    import os
+    import shutil
+
+    # Validate inputs
+    library_id = data.get("library_id")
+    disk_id = data.get("disk_id")
+    create_folders = bool(data.get("create_folders", True))
+    if library_id is None or disk_id is None:
+        raise HTTPException(status_code=400, detail="library_id and disk_id are required")
+
+    show = db.query(TVShow).filter(TVShow.id == show_id).first()
+    if not show:
+        raise HTTPException(status_code=404, detail="TV show not found")
+
+    # Resolve target base path from library+disk
+    cfg = config_manager.get_config()
+    lib = next((l for l in cfg.libraries if l.id == library_id), None)
+    if not lib:
+        raise HTTPException(status_code=400, detail="Invalid library_id")
+    disk = next((f for f in lib.folders if f.id == disk_id), None)
+    if not disk:
+        raise HTTPException(status_code=400, detail="Invalid disk_id for the library")
+
+    target_root = disk.path
+    if not os.path.isdir(target_root):
+        try:
+            os.makedirs(target_root, exist_ok=True)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to prepare target path: {str(e)}")
+
+    # Helper to compute directory size in bytes
+    def _dir_size(path: str) -> int:
+        total = 0
+        for root, _, files in os.walk(path):
+            for f in files:
+                fp = os.path.join(root, f)
+                try:
+                    total += os.path.getsize(fp)
+                except OSError:
+                    pass
+        return total
+
+    # Check free space on target
+    try:
+        stat = os.statvfs(target_root)
+        free_bytes = stat.f_bavail * stat.f_frsize
+    except Exception:
+        free_bytes = 0
+
+    # If current folder exists, estimate its size
+    current_folder = show.folder_path
+    required_bytes = 0
+    if current_folder and os.path.exists(current_folder):
+        try:
+            required_bytes = _dir_size(current_folder)
+        except Exception:
+            required_bytes = 0
+
+    if required_bytes > 0 and free_bytes > 0 and required_bytes > free_bytes:
+        raise HTTPException(status_code=400, detail="Insufficient free space on target disk for move")
+
+    try:
+        if current_folder and os.path.exists(current_folder):
+            leaf = os.path.basename(current_folder.rstrip(os.sep))
+            target_folder = os.path.join(target_root, leaf)
+            if os.path.abspath(current_folder) == os.path.abspath(target_folder):
+                return {"message": "Show already on the selected disk", "folder_path": show.folder_path}
+            if os.path.exists(target_folder):
+                # Avoid destructive merge; fail fast
+                raise HTTPException(status_code=409, detail=f"Target folder already exists: {target_folder}")
+            shutil.move(current_folder, target_folder)
+            show.folder_path = target_folder
+        else:
+            # No current folder; optionally create a new structure if requested
+            if create_folders:
+                from backend.services.tmdb_service import TMDBService
+                tmdb = TMDBService()
+                details = await tmdb.get_tv_details(show.tmdb_id)
+                show_name = details.get("name", show.title)
+                show_year = None
+                if details.get("first_air_date"):
+                    try:
+                        show_year = int(details["first_air_date"].split("-")[0])
+                    except (ValueError, IndexError):
+                        pass
+                # Use naming_service to create a fresh structure under target_root
+                seasons = [s.get("season_number") for s in details.get("seasons", []) if s.get("season_number", 0) > 0]
+                folder_result = naming_service.create_show_folder_structure(
+                    library_path=target_root,
+                    show_name=show_name,
+                    year=show_year,
+                    seasons=seasons
+                )
+                if not getattr(folder_result, 'success', False):
+                    raise HTTPException(status_code=500, detail=f"Failed to create folder structure: {getattr(folder_result, 'message', 'unknown error')}")
+                show.folder_path = getattr(folder_result, 'folder_path', None)
+            else:
+                # Nothing to do other than update the base if we ever track by ids later
+                pass
+
+        db.commit()
+        db.refresh(show)
+
+        return {
+            "message": "Location updated successfully",
+            "folder_path": show.folder_path,
+            "library_id": library_id,
+            "disk_id": disk_id,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to move show: {str(e)}")
+
 # TV Shows endpoints
 @router.get("/tv", response_model=List[dict])
 async def get_tv_shows(
@@ -290,26 +410,28 @@ def get_tv_show(show_id: int, db: Session = Depends(get_db)):
 
 @router.post("/tv")
 async def add_tv_show_to_collection(
-    tmdb_id: int, 
-    library_path: str = None,
+    tmdb_id: int,
+    library_id: int | None = None,
+    disk_id: int | None = None,
     create_folder: bool = True,
-    monitoring: str = None,
-    monitoring_option: str = None,
-    monitoring_status: str = None,
+    monitoring: str | None = None,
+    monitoring_option: str | None = None,
+    monitoring_status: str | None = None,
     db: Session = Depends(get_db)
 ):
-    """Add a TV show to the collection by TMDB ID with disk selection"""
+    """Add a TV show to the collection by TMDB ID with library/disk selection by ID"""
     # Use the existing collection service (expects DB in constructor)
     collection_service = CollectionService(db)
     from backend.services.tmdb_service import TMDBService
+    from backend.core.yaml_config import config_manager
     tmdb = TMDBService()
-    
+
     try:
         # Get show details from TMDB first (for naming and season list)
         show_data = await tmdb.get_tv_details(tmdb_id)
         if not show_data:
             raise HTTPException(status_code=404, detail="TV show not found on TMDB")
-        
+
         show_name = show_data.get("name", "Unknown")
         show_year = None
         if show_data.get("first_air_date"):
@@ -317,39 +439,48 @@ async def add_tv_show_to_collection(
                 show_year = int(show_data["first_air_date"].split("-")[0])
             except (ValueError, IndexError):
                 pass
-        
-        # If library_path provided and create_folder is True, create folder structure
+
+        # If IDs provided and create_folder is True, resolve to a path and create structure
         folder_path = None
-        if library_path and create_folder:
-            # Validate library path
-            path_validation = naming_service.validate_library_path(library_path)
-            if not path_validation["valid"]:
-                raise HTTPException(status_code=400, detail=f"Invalid library path: {path_validation['message']}")
-            if not path_validation["writable"]:
-                raise HTTPException(status_code=400, detail="Library path is not writable")
-            
+        if library_id is not None and disk_id is not None and create_folder:
+            cfg = config_manager.get_config()
+            lib = next((l for l in cfg.libraries if l.id == library_id), None)
+            if not lib:
+                raise HTTPException(status_code=400, detail="Invalid library_id")
+            disk = next((f for f in lib.folders if f.id == disk_id), None)
+            if not disk:
+                raise HTTPException(status_code=400, detail="Invalid disk_id for the library")
+
+            base_path = disk.path
+            # Validate base path
+            path_validation = naming_service.validate_library_path(base_path)
+            if not path_validation.get("valid"):
+                raise HTTPException(status_code=400, detail=f"Invalid disk path: {path_validation.get('message')}")
+            if not path_validation.get("writable"):
+                raise HTTPException(status_code=400, detail="Disk path is not writable")
+
             # Get season numbers from TMDB to create season folders
-            seasons = [s["season_number"] for s in show_data.get("seasons", []) if s.get("season_number", 0) > 0]
-            
+            seasons = [s.get("season_number") for s in show_data.get("seasons", []) if s.get("season_number", 0) > 0]
+
             # Create folder structure
             folder_result = naming_service.create_show_folder_structure(
-                library_path=library_path,
+                library_path=base_path,
                 show_name=show_name,
                 year=show_year,
                 seasons=seasons
             )
-            
-            if not folder_result.success:
-                raise HTTPException(status_code=500, detail=f"Failed to create folder structure: {folder_result.message}")
-            
-            folder_path = folder_result.folder_path
-        
+
+            if not getattr(folder_result, 'success', False):
+                raise HTTPException(status_code=500, detail=f"Failed to create folder structure: {getattr(folder_result, 'message', 'unknown error')}")
+
+            folder_path = getattr(folder_result, 'folder_path', None)
+
         # Add show to collection using the collection service, passing folder_path
         tv_show = await collection_service.add_tv_show(tmdb_id, folder_path=folder_path)
-        
+
         if not tv_show:
             raise HTTPException(status_code=500, detail="Failed to add show to collection")
-        
+
         # Set the monitoring option if provided
         monitoring_value = monitoring or monitoring_option or monitoring_status
         if monitoring_value:
@@ -357,7 +488,7 @@ async def add_tv_show_to_collection(
             tv_show.monitored = monitoring_value != "None"
             db.commit()
             db.refresh(tv_show)
-        
+
         return {
             "id": tv_show.id,
             "tmdb_id": tv_show.tmdb_id,
@@ -370,7 +501,9 @@ async def add_tv_show_to_collection(
             "monitored": tv_show.monitored,
             "folder_path": tv_show.folder_path,
             "seasons_count": len(tv_show.seasons),
-            "folder_created": bool(folder_path)
+            "folder_created": bool(folder_path),
+            "library_id": library_id,
+            "disk_id": disk_id,
         }
     except HTTPException:
         raise
@@ -520,17 +653,10 @@ def remove_tv_show(
     return {"message": message}
 
 # Library Management endpoints
+# Deprecated: path-based listing kept for backward compatibility (will be removed)
 @router.get("/library/tv/paths")
 def get_tv_library_paths():
-    """Get configured TV library paths"""
-    try:
-        paths = naming_service.get_library_paths()
-        return {
-            "paths": paths,
-            "total": len(paths)
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get library paths: {str(e)}")
+    return {"paths": [], "total": 0}
 
 @router.post("/library/paths/validate")
 def validate_library_path(path: str):

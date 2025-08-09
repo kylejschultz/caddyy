@@ -22,11 +22,6 @@ import PageHeader from '../components/PageHeader'
 import ImportCompletionModal from '../components/ImportCompletionModal'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
 
-interface LibraryPath {
-  name: string
-  path: string
-}
-
 
 interface ImportPreview {
   matches: ImportMatch[]
@@ -73,7 +68,8 @@ interface ImportMatch {
 
 export default function ImportTVShows() {
   const navigate = useNavigate()
-  const [selectedPaths, setSelectedPaths] = useState<string[]>([])
+  const [selectedLibraryId, setSelectedLibraryId] = useState<number | ''>('')
+  const [selectedDiskIds, setSelectedDiskIds] = useState<number[]>([])
   const [currentSession, setCurrentSession] = useState<string | null>(null)
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
   // const [activeTab, setActiveTab] = useState('matches')
@@ -86,10 +82,16 @@ export default function ImportTVShows() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showToDelete, setShowToDelete] = useState<{id: number, title: string, folder_path?: string, total_size?: number} | null>(null)
 
-  // Fetch configured TV library paths
-  const { data: config } = useQuery({
-    queryKey: ['tv-config'],
-    queryFn: () => axios.get('/api/config/tv/').then(res => res.data)
+  // Load libraries and folders for selection
+  const { data: libraries } = useQuery({
+    queryKey: ['libraries'],
+    queryFn: () => axios.get('/api/libraries').then(res => res.data as Array<{id:number; name:string; media_type:'movies'|'tv'}>)
+  })
+
+  const { data: disks } = useQuery({
+    queryKey: ['library-disks', selectedLibraryId],
+    queryFn: () => selectedLibraryId ? axios.get(`/api/libraries/${selectedLibraryId}/folders`).then(res => res.data as Array<{id:number; name:string; path:string; enabled:boolean}>) : [],
+    enabled: !!selectedLibraryId
   })
 
   // Fetch general settings for auto-match threshold
@@ -171,7 +173,7 @@ export default function ImportTVShows() {
 
   // Start import session mutation
   const startSessionMutation = useMutation({
-    mutationFn: (data: { media_type: string; library_paths: string[] }) =>
+    mutationFn: (data: { media_type: string; library_id: number; disk_ids: number[] }) =>
       axios.post('/api/import/start-session', data),
     onSuccess: (response) => {
       setCurrentSession(response.data.session_id)
@@ -200,11 +202,12 @@ export default function ImportTVShows() {
   })
 
   const handleStartImport = () => {
-    if (selectedPaths.length === 0) return
+    if (!selectedLibraryId || selectedDiskIds.length === 0) return
 
     startSessionMutation.mutate({
       media_type: 'tv',
-      library_paths: selectedPaths
+      library_id: selectedLibraryId as number,
+      disk_ids: selectedDiskIds
     })
   }
 
@@ -389,7 +392,7 @@ export default function ImportTVShows() {
     return sorted
   }
 
-  const libraryPaths = config?.library_paths || []
+  const tvLibraries = (libraries || []).filter((l:any) => l.media_type === 'tv')
 
   return (
     <>
@@ -401,13 +404,13 @@ export default function ImportTVShows() {
       <div className="p-6 space-y-6">
         {!currentSession && (
           <div className="bg-slate-800 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Select Library Paths</h2>
+            <h2 className="text-xl font-semibold text-white mb-4">Select Library and Disks</h2>
             <p className="text-slate-400 mb-4">
-              Choose which TV library paths you want to scan for existing shows. 
+              Choose a TV library and one or more disks to scan for existing shows. 
               The scanner will look for shows following TRaSH Guides naming conventions.
             </p>
             
-            {libraryPaths.length === 0 ? (
+            {tvLibraries.length === 0 ? (
               <div className="text-center py-8">
                 <FolderOpen className="w-16 h-16 mx-auto text-slate-500 mb-4" />
                 <h3 className="text-lg font-semibold text-white mb-2">No Library Paths Configured</h3>
@@ -415,55 +418,74 @@ export default function ImportTVShows() {
                   You need to configure TV library paths before importing.
                 </p>
                 <button
-                  onClick={() => navigate('/shows/settings')}
+                  onClick={() => navigate('/settings/libraries')}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
                 >
-                  Configure TV Settings
+                  Open Libraries
                 </button>
               </div>
             ) : (
-              <div className="space-y-3">
-                {libraryPaths.map((path: LibraryPath) => {
-                  const isSelected = selectedPaths.includes(path.path)
-                  return (
-                    <div 
-                      key={path.path} 
-                      onClick={() => {
-                        if (isSelected) {
-                          setSelectedPaths(selectedPaths.filter(p => p !== path.path))
-                        } else {
-                          setSelectedPaths([...selectedPaths, path.path])
-                        }
-                      }}
-                      className={`cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
-                        isSelected 
-                          ? 'border-blue-500 bg-blue-500/10' 
-                          : 'border-slate-600 hover:border-slate-500 hover:bg-slate-700/50'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
-                          isSelected 
-                            ? 'border-blue-500 bg-blue-500' 
-                            : 'border-slate-500'
-                        }`}>
-                          {isSelected && (
-                            <CheckCircle className="w-3 h-3 text-white" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-white">{path.name}</div>
-                          <div className="text-sm text-slate-400">{path.path}</div>
-                        </div>
-                      </div>
+              <div className="space-y-4">
+                {/* Library selector */}
+                <div>
+                  <label className="block text-sm text-slate-300 mb-2">TV Library</label>
+                  <select
+                    value={selectedLibraryId}
+                    onChange={(e) => {
+                      const val = e.target.value ? parseInt(e.target.value) : ''
+                      setSelectedLibraryId(val as any)
+                      setSelectedDiskIds([])
+                    }}
+                    className="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2 text-white"
+                  >
+                    <option value="">Select a TV library...</option>
+                    {tvLibraries.map((lib:any) => (
+                      <option key={lib.id} value={lib.id}>{lib.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Disk selector */}
+                {selectedLibraryId && (
+                  <div>
+                    <label className="block text-sm text-slate-300 mb-2">Select Disks to Scan</label>
+                    <div className="space-y-3">
+                      {(disks || []).map((d:any) => {
+                        const isSelected = selectedDiskIds.includes(d.id)
+                        return (
+                          <div
+                            key={d.id}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedDiskIds(selectedDiskIds.filter(x => x !== d.id))
+                              } else {
+                                setSelectedDiskIds([...selectedDiskIds, d.id])
+                              }
+                            }}
+                            className={`cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
+                              isSelected ? 'border-blue-500 bg-blue-500/10' : 'border-slate-600 hover:border-slate-500 hover:bg-slate-700/50'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-slate-500'}`}>
+                                {isSelected && (<CheckCircle className="w-3 h-3 text-white" />)}
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium text-white">{d.name}</div>
+                                <div className="text-sm text-slate-400">{d.path}</div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
                     </div>
-                  )
-                })}
-                
-                <div className="pt-4">
+                  </div>
+                )}
+
+                <div className="pt-2">
                   <button
                     onClick={handleStartImport}
-                    disabled={selectedPaths.length === 0 || startSessionMutation.isPending}
+                    disabled={!selectedLibraryId || selectedDiskIds.length === 0 || startSessionMutation.isPending}
                     className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white px-6 py-2 rounded-md"
                   >
                     {startSessionMutation.isPending ? (
