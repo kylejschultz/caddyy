@@ -3,15 +3,15 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { 
   X, 
   Plus, 
-  Loader2, 
-  AlertCircle, 
-  Tv,
+  CircleNotch as Loader2, 
+  WarningCircle as AlertCircle, 
+  Television as Tv,
   CheckCircle,
   HardDrive,
   FolderPlus,
   Folder,
-  ChevronDown
-} from 'lucide-react'
+  CaretDown as ChevronDown
+} from '@phosphor-icons/react'
 import axios from 'axios'
 import Toast from './Toast'
 import MonitoringDropdown, { MonitoringOption } from './MonitoringDropdown'

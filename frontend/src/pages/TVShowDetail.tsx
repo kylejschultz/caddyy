@@ -9,12 +9,12 @@ import {
   Users, 
   Play, 
   Download,
-  Tv,
-  Trash2,
+  Television as Tv,
+  Trash as Trash2,
   CheckCircle,
-  ChevronDown,
-  ChevronRight
-} from 'lucide-react'
+  CaretDown as ChevronDown,
+  CaretRight as ChevronRight
+} from '@phosphor-icons/react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
 import SeasonAccordion, { Season } from '../components/SeasonAccordion'

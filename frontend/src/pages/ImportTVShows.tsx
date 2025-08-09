@@ -3,22 +3,22 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { 
   FolderOpen, 
-  Search, 
+  MagnifyingGlass as Search, 
   CheckCircle, 
-  AlertCircle, 
+  WarningCircle as AlertCircle, 
   XCircle, 
   Play,
   Eye,
-  Loader2,
+  CircleNotch as Loader2,
   Clock,
   FileText,
-  FolderTree,
-  ChevronDown,
-  ChevronRight,
+  TreeStructure as FolderTree,
+  CaretDown as ChevronDown,
+  CaretRight as ChevronRight,
   Archive,
-  Filter,
-  ArrowUpDown
-} from 'lucide-react'
+  FunnelSimple as Filter,
+  ArrowsDownUp as ArrowUpDown
+} from '@phosphor-icons/react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
 import ImportCompletionModal from '../components/ImportCompletionModal'

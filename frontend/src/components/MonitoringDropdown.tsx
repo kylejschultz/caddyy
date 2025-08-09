@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronDown, Monitor, CheckCircle } from 'lucide-react'
+import { CaretDown as ChevronDown, Monitor, CheckCircle } from '@phosphor-icons/react'
 
 export type MonitoringOption = 
   | 'None'

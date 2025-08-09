@@ -1,4 +1,4 @@
-import { Tv, List, Plus, Calendar, Monitor, Download, HardDrive, Trash2, Disc, Grid, Star } from 'lucide-react'
+import { Television as Tv, List, Plus, Calendar, Monitor, Download, HardDrive, Trash as Trash2, Disc, SquaresFour as Grid, Star } from '@phosphor-icons/react'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import PageHeader from '../components/PageHeader'

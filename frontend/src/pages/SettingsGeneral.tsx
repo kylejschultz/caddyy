@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
-import { Save, RotateCcw, Settings as SettingsIcon, User, Shield, Folder as FolderIcon, Sun, Moon, Monitor, Plus, Trash2 } from 'lucide-react'
+import { FloppyDisk as Save, ArrowCounterClockwise as RotateCcw, Gear as SettingsIcon, User, Shield, Folder as FolderIcon, Sun, Moon, Monitor, Plus, Trash } from '@phosphor-icons/react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
 import SidebarNavigation from '../components/SidebarNavigation'

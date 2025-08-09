@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Film, Tv, Calendar, Star, ArrowUpDown, Search as SearchIcon } from 'lucide-react'
+import { FilmSlate as Film, Television as Tv, Calendar, Star, ArrowsDownUp as ArrowUpDown, MagnifyingGlass as SearchIcon } from '@phosphor-icons/react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
 

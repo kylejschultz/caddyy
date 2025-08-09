@@ -1,4 +1,4 @@
-import { Film, List, Plus, Monitor, Download, Clock } from 'lucide-react'
+import { FilmSlate as Film, List, Plus, Monitor, Download, Clock } from '@phosphor-icons/react'
 import { useState, useEffect } from 'react'
 import PageHeader from '../components/PageHeader'
 

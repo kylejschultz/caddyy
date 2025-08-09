@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Clock, Play, Pause, X } from 'lucide-react'
+import { Clock, Play, Pause, X } from '@phosphor-icons/react'
 
 interface QueueItem {
   id: string

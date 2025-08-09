@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { List, Trash2 } from 'lucide-react'
+import { List, Trash } from '@phosphor-icons/react'
 
 interface HistoryItem {
   id: string

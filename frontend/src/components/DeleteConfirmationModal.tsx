@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, AlertTriangle, Trash2, Database } from 'lucide-react'
+import { X, Warning as AlertTriangle, Trash as Trash2, Database } from '@phosphor-icons/react'
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean

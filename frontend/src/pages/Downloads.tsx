@@ -1,4 +1,4 @@
-import { Download, Activity, CheckCircle, History } from 'lucide-react'
+import { Download, Pulse as Activity, CheckCircle, ClockCounterClockwise as History } from '@phosphor-icons/react'
 import PageHeader from '../components/PageHeader'
 
 export default function Downloads() {

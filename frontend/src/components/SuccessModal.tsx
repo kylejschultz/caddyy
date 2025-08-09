@@ -1,4 +1,4 @@
-import { CheckCircle, X } from 'lucide-react'
+import { CheckCircle, X } from '@phosphor-icons/react'
 import { useEffect } from 'react'
 
 interface SuccessModalProps {

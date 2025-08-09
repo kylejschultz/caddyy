@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, Folder, File, ChevronUp } from 'lucide-react';
+import { CaretLeft as ChevronLeft, Folder, File, CaretUp as ChevronUp } from '@phosphor-icons/react';
 
 interface FileSystemItem {
   name: string;

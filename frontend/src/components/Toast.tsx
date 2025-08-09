@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle, X, AlertCircle, Info } from 'lucide-react'
+import { CheckCircle, X, WarningCircle as AlertCircle, Info } from '@phosphor-icons/react'
 
 interface ToastProps {
   isVisible: boolean

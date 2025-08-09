@@ -1,4 +1,4 @@
-import { CheckCircle, X, ArrowRight, Tv } from 'lucide-react'
+import { CheckCircle, X, ArrowRight, Television as Tv } from '@phosphor-icons/react'
 import { useNavigate } from 'react-router-dom'
 
 interface ImportCompletionModalProps {

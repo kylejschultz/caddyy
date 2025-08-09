@@ -8,9 +8,9 @@ import {
   Clock, 
   Plus,
   Check,
-  Film,
+  FilmSlate as Film,
   Download
-} from 'lucide-react'
+} from '@phosphor-icons/react'
 import axios from 'axios'
 
 interface MovieDetails {

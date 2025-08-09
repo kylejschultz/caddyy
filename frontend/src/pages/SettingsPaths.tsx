@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
 import { FileBrowser } from '../components/FileBrowser';
-import { Plus, Trash2, Folder, X, Download, Edit3, Check, X as XIcon, ChevronDown, Film, Monitor, Filter } from 'lucide-react';
+import { Plus, Trash as Trash2, Folder, X, Download, PencilSimple as Edit3, Check, X as XIcon, CaretDown as ChevronDown, FilmSlate as Film, Monitor, FunnelSimple as Filter } from '@phosphor-icons/react';
 
 interface MediaPath {
   index?: number; // For YAML config (array index)

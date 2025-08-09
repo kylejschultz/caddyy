@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Search as SearchIcon, Tv, Star, Plus } from 'lucide-react'
+import { ArrowLeft, MagnifyingGlass as SearchIcon, Television as Tv, Star, Plus } from '@phosphor-icons/react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
 import AddToCollectionModal from '../components/AddToCollectionModal'

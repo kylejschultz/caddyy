@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FolderOpen, X, Folder as FolderIcon } from 'lucide-react'
+import { FolderOpen, X, Folder as FolderIcon } from '@phosphor-icons/react'
 import { FileBrowser } from './FileBrowser'
 
 interface MediaDirectory {

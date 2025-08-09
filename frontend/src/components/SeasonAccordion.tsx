@@ -3,10 +3,10 @@ import { useQuery } from '@tanstack/react-query'
 import { 
   Star,
   Play,
-  ChevronDown,
-  ChevronRight,
-  Tv
-} from 'lucide-react'
+  CaretDown as ChevronDown,
+  CaretRight as ChevronRight,
+  Television as Tv
+} from '@phosphor-icons/react'
 import axios from 'axios'
 
 export interface Season {
