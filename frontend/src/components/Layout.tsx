@@ -1,9 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Activity,
-} from 'lucide-react'
-import {
   House,
   FilmSlate,
   Television,
@@ -17,7 +14,10 @@ import {
   SquaresFour,
   Clock,
   List,
-  UploadSimple
+  UploadSimple,
+  Pulse,
+  CaretDoubleLeft,
+  CaretDoubleRight
 } from '@phosphor-icons/react'
 import clsx from 'clsx'
 
@@ -90,13 +90,14 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedItems, setExpandedItems] = useState<string | null>(null)
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   // Auto-expand navigation sections based on current path
   useEffect(() => {
     const pathSegments = location.pathname.split('/').filter(Boolean)
     const currentSection = pathSegments[0]
     
-    let sectionToExpand = null
+    let sectionToExpand: string | null = null
     if (currentSection === 'movies' || currentSection === 'movie') sectionToExpand = 'Movies'
     else if (currentSection === 'shows' || currentSection === 'tv') sectionToExpand = 'TV Shows'
     else if (currentSection === 'monitor') sectionToExpand = 'Monitor'
@@ -125,6 +126,23 @@ export default function Layout({ children }: LayoutProps) {
 
     const toggleExpand = () => {
       setExpandedItems(prev => (prev === item.name ? null : item.name))
+    }
+
+    if (isCollapsed) {
+      return (
+        <li key={item.name}>
+          <Link
+            to={item.href || '#'}
+            title={item.name}
+            className={clsx(
+              'flex items-center justify-center px-0 py-2 text-sm rounded-md transition-colors',
+              isActive ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white'
+            )}
+          >
+            <item.icon className="w-5 h-5" />
+          </Link>
+        </li>
+      )
     }
 
     return (
@@ -227,15 +245,41 @@ export default function Layout({ children }: LayoutProps) {
     <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
       <div className="flex">
         {/* Fixed Sidebar */}
-        <div className="fixed left-0 top-0 w-64 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 z-30 flex flex-col">
-          <div className="p-6 flex-shrink-0">
-            <div className="flex items-center space-x-2">
-              <Activity className="w-8 h-8 text-blue-500" />
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Caddyy</h1>
-            </div>
+        <div className={clsx(
+          'fixed left-0 top-0 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 z-30 flex flex-col transition-all duration-200',
+          isCollapsed ? 'w-16' : 'w-64'
+        )}>
+          <div className={clsx('flex items-center justify-between flex-shrink-0', isCollapsed ? 'p-4' : 'p-6')}>
+            {isCollapsed ? (
+              <div className="flex items-center justify-center gap-2 w-full">
+                <button
+                  className="p-1.5 text-slate-500 hover:text-slate-200 hover:bg-slate-800 rounded-md"
+                  onClick={() => setIsCollapsed(false)}
+                  title="Expand sidebar"
+                >
+                  <CaretDoubleRight className="w-4 h-4" />
+                </button>
+                <Pulse className="w-7 h-7 text-blue-500" />
+              </div>
+            ) : (
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center space-x-2">
+                  <Pulse className="w-8 h-8 text-blue-500" />
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Caddyy</h1>
+                </div>
+                <button
+                  className="ml-2 p-1.5 text-slate-500 hover:text-slate-200 hover:bg-slate-800 rounded-md"
+                  onClick={() => setIsCollapsed(true)}
+                  title="Collapse sidebar"
+                >
+                  <CaretDoubleLeft className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
           
-        <div className="px-6 pb-4 flex-shrink-0">
+        {!isCollapsed && (
+          <div className="px-6 pb-4 flex-shrink-0">
             <div className="relative">
               <MagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-400" />
               <input
@@ -248,20 +292,25 @@ export default function Layout({ children }: LayoutProps) {
               />
             </div>
           </div>
+        )}
           
-          <nav className="px-3 flex-1 overflow-y-auto">
-            <ul className="space-y-1">
+          <nav className={clsx('flex-1 overflow-y-auto', isCollapsed ? 'px-2 py-2' : 'px-3')}>
+            <ul className={clsx(isCollapsed ? 'space-y-2' : 'space-y-1')}>
               {renderNavigationItem(dashboardItem)}
-              <li className="px-3 pt-4 pb-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Library</li>
+              {!isCollapsed && (
+                <li className="px-3 pt-4 pb-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Library</li>
+              )}
               {navigationGroups[0].items.map(renderNavigationItem)}
-              <li className="px-3 pt-4 pb-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">System</li>
+              {!isCollapsed && (
+                <li className="px-3 pt-4 pb-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">System</li>
+              )}
               {navigationGroups[1].items.map(renderNavigationItem)}
             </ul>
           </nav>
         </div>
         
         {/* Main content with left margin to account for fixed sidebar */}
-        <div className="flex-1 ml-64">
+        <div className={clsx('flex-1 transition-all duration-200', isCollapsed ? 'ml-16' : 'ml-64')}>
           <main className="min-h-screen">
             {children}
           </main>
