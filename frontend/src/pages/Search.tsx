@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { FilmSlate as Film, Television as Tv, Calendar, Star, ArrowsDownUp as ArrowUpDown, MagnifyingGlass as SearchIcon } from '@phosphor-icons/react'
 import axios from 'axios'
@@ -21,9 +21,8 @@ type SortOption = 'relevance' | 'rating' | 'year' | 'title'
 type FilterType = 'all' | 'movie' | 'tv'
 
 export default function Search() {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const location = useLocation()
   const query = searchParams.get('q') || ''
   const filter = (searchParams.get('filter') as FilterType) || 'all'
   const [sortBy, setSortBy] = useState<SortOption>('relevance')

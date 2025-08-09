@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PageHeader from '../components/PageHeader';
 import { FileBrowser } from '../components/FileBrowser';
-import { Plus, Trash as Trash2, Folder, X, Download, PencilSimple as Edit3, Check, X as XIcon, CaretDown as ChevronDown, FilmSlate as Film, Monitor, FunnelSimple as Filter } from '@phosphor-icons/react';
+import { Plus, Trash as Trash2, Folder, X, Download, PencilSimple as Edit3, CaretDown as ChevronDown, FilmSlate as Film, Monitor, FunnelSimple as Filter } from '@phosphor-icons/react';
 
 interface MediaPath {
+  id?: number;
   index?: number; // For YAML config (array index)
   media_type: 'movies' | 'tv' | 'downloads';
   path: string;
   name: string;
   enabled: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export default function SettingsPaths() {
   const [mediaPaths, setMediaPaths] = useState<MediaPath[]>([]);
-  const [showFileBrowser, setShowFileBrowser] = useState(false);
-  const [browserType, setBrowserType] = useState<'movies' | 'tv' | 'downloads'>('movies');
-  const [editingPath, setEditingPath] = useState<MediaPath | null>(null);
   const [loading, setLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editModalData, setEditModalData] = useState<{
@@ -149,61 +149,7 @@ export default function SettingsPaths() {
     setShowEditModal(true);
   };
 
-  const handlePathSelected = async (selectedPath: string) => {
-    setLoading(true);
-    
-    try {
-      // Validate the path first
-      const validateResponse = await fetch('/api/filesystem/validate-path', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ path: selectedPath }),
-      });
-      
-      const validation = await validateResponse.json();
-      
-      if (!validation.valid) {
-        alert(`Invalid path: ${validation.reason}`);
-        return;
-      }
-
-      // Create or update the path
-      const pathName = selectedPath.split('/').pop() || selectedPath;
-      const newPath: MediaPath = {
-        id: editingPath?.id || Date.now(),
-        media_type: browserType,
-        path: selectedPath,
-        name: editingPath?.name || `${browserType === 'movies' ? 'Movies' : browserType === 'tv' ? 'TV Shows' : 'Downloads'} - ${pathName}`,
-        enabled: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
-      if (editingPath) {
-        setMediaPaths(prev => prev.map(p => p.id === editingPath.id ? newPath : p));
-      } else {
-        setMediaPaths(prev => [...prev, newPath]);
-      }
-
-      setShowFileBrowser(false);
-      setEditingPath(null);
-
-      // Show validation info
-      if (validation.has_media_files) {
-        alert(`Path added successfully! Found media files in this directory.`);
-      } else {
-        alert(`Path added successfully! No media files detected yet - you can add them later.`);
-      }
-
-    } catch (error) {
-      console.error('Error adding path:', error);
-      alert('Failed to add path. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Removed unused handlePathSelected block
 
   const handleRemovePath = async (index: number) => {
     if (!confirm('Are you sure you want to remove this media path?')) {
@@ -242,11 +188,6 @@ export default function SettingsPaths() {
     }
   };
 
-  const handleTogglePath = (id: number) => {
-    setMediaPaths(prev => 
-      prev.map(p => p.id === id ? { ...p, enabled: !p.enabled } : p)
-    );
-  };
 
   const handleSaveEditModal = async () => {
     if (!editModalData || !editModalData.name.trim() || !editModalData.path.trim()) {
@@ -708,7 +649,6 @@ export default function SettingsPaths() {
             {/* Modal Content */}
             <div className="p-3 overflow-y-auto" style={{ maxHeight: 'calc(70vh - 60px)' }}>
               <FileBrowser
-                title=""
                 onSelectPath={handleLightFileBrowserSelect}
                 showFiles={false}
               />

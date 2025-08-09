@@ -11,8 +11,6 @@ import {
   Eye,
   CircleNotch as Loader2,
   Clock,
-  FileText,
-  TreeStructure as FolderTree,
   CaretDown as ChevronDown,
   CaretRight as ChevronRight,
   Archive,
@@ -78,7 +76,7 @@ export default function ImportTVShows() {
   const [selectedPaths, setSelectedPaths] = useState<string[]>([])
   const [currentSession, setCurrentSession] = useState<string | null>(null)
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
-  const [activeTab, setActiveTab] = useState('matches')
+  // const [activeTab, setActiveTab] = useState('matches')
   const [selectedForImport, setSelectedForImport] = useState<Set<number>>(new Set())
   const [monitoringStatus, setMonitoringStatus] = useState<Record<number, string>>({})
   const [sortBy, setSortBy] = useState<'name' | 'confidence' | 'status' | 'episodes'>('name')
@@ -130,7 +128,7 @@ export default function ImportTVShows() {
       const threshold = settings.auto_match_threshold || 0.8
       const statusesToExclude = ['already_in_collection', 'skipped', 'duplicate', 'existing']
       
-      previewData.matches.forEach((match, index) => {
+      previewData.matches.forEach((match: ImportMatch, index: number) => {
         // Auto-select shows with confidence above threshold, regardless of status (except excluded ones)
         // This handles 'pending' status shows that have high confidence
         if (!statusesToExclude.includes(match.match_status) && (match.confidence_score >= threshold || match.selected_match)) {
@@ -340,15 +338,7 @@ export default function ImportTVShows() {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const getMatchStatusColor = (status: string, confidenceScore: number) => {
-    if (status === 'matched') {
-      return confidenceScore >= 0.9 ? 'text-green-500' : 'text-yellow-500'
-    }
-    if (status === 'manual') return 'text-blue-500'
-    if (status === 'skipped') return 'text-gray-500'
-    return 'text-orange-500'
-  }
+  /* Removed unused getMatchStatusColor; was only used for styling */
 
   const getFilteredAndSortedMatches = (matches: ImportMatch[]) => {
     // Add original index to preserve mapping

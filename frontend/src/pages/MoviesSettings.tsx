@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
-import { Film, Folder, HardDrive, Plus, Trash2, Settings as SettingsIcon, Save, RotateCcw } from 'lucide-react'
+import { Plus, Save, RotateCcw } from 'lucide-react'
+import { Folder, HardDrive } from '@phosphor-icons/react'
 import PageHeader from '../components/PageHeader'
 import PathInput from '../components/PathInput'
 import { validatePath } from '../utils/pathValidation'
@@ -21,8 +21,8 @@ interface MoviesConfig {
 
 export default function MoviesSettings() {
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
-  const location = useLocation()
+  // const navigate = useNavigate()
+  // const location = useLocation()
   const [newLibraryPath, setNewLibraryPath] = useState({ name: '', path: '' })
   const [isAddingLibrary, setIsAddingLibrary] = useState(false)
   const [editableConfig, setEditableConfig] = useState<MoviesConfig | null>(null)
@@ -81,7 +81,7 @@ export default function MoviesSettings() {
     mutationFn: (updatedConfig: MoviesConfig) => 
       axios.put('/api/config/movies/', updatedConfig).then(res => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['movies-config'])
+      queryClient.invalidateQueries({ queryKey: ['movies-config'] })
       setOriginalConfig(JSON.parse(JSON.stringify(editableConfig)))
       setIsDirty(false)
       setShowToast(true)
@@ -93,7 +93,7 @@ export default function MoviesSettings() {
     mutationFn: (directory: { name: string; path: string; enabled: boolean }) => 
       axios.post('/api/config/movies/library-paths', directory).then(res => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['movies-config'])
+      queryClient.invalidateQueries({ queryKey: ['movies-config'] })
       setNewLibraryPath({ name: '', path: '' })
       setIsAddingLibrary(false)
     },
@@ -104,7 +104,7 @@ export default function MoviesSettings() {
     mutationFn: (index: number) => 
       axios.delete(`/api/config/movies/library-paths/${index}`).then(res => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['movies-config'])
+      queryClient.invalidateQueries({ queryKey: ['movies-config'] })
     },
   })
 
@@ -177,9 +177,6 @@ export default function MoviesSettings() {
     }
   }
 
-  const isFieldChanged = (originalValue: any, currentValue: any) => {
-    return JSON.stringify(originalValue) !== JSON.stringify(currentValue)
-  }
 
   const headerActions = (
     <>

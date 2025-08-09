@@ -145,7 +145,6 @@ export default function PathInput({
             {/* Modal Content */}
             <div className="p-3 overflow-y-auto" style={{ maxHeight: 'calc(70vh - 60px)' }}>
               <FileBrowser
-                title=""
                 onSelectPath={handleFileBrowserSelect}
                 showFiles={false}
               />

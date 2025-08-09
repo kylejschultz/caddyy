@@ -88,7 +88,6 @@ export default function MonitoringDropdown({
       
       // Check horizontal space
       const hasRightSpace = buttonRect.left + dropdownWidth <= viewportWidth - 16
-      const hasLeftSpace = buttonRect.right - dropdownWidth >= 16
       
       // Check vertical space  
       const hasBottomSpace = buttonRect.bottom + dropdownHeight <= viewportHeight - 16

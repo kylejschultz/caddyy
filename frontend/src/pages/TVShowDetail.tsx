@@ -1,19 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   ArrowLeft, 
-  Calendar, 
   Star, 
   Clock, 
   Users, 
-  Play, 
   Download,
   Television as Tv,
+  Broadcast,
+  HardDrive,
   Trash as Trash2,
-  CheckCircle,
-  CaretDown as ChevronDown,
-  CaretRight as ChevronRight
+  CheckCircle
 } from '@phosphor-icons/react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
@@ -21,6 +19,7 @@ import SeasonAccordion, { Season } from '../components/SeasonAccordion'
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
 import AddToCollectionModal from '../components/AddToCollectionModal'
 import MonitoringDropdown, { MonitoringOption } from '../components/MonitoringDropdown'
+import DiskDropdown from '../components/DiskDropdown'
 import Toast from '../components/Toast'
 
 interface TVShowDetails {
@@ -33,7 +32,7 @@ interface TVShowDetails {
   first_air_date: string
   last_air_date?: string
   status: string
-  rating: float
+  rating: number
   vote_count: number
   genres: string[]
   created_by: string[]
@@ -43,7 +42,6 @@ interface TVShowDetails {
   episode_run_time: number[]
   seasons: Season[]
   // Collection-specific fields
-  tmdb_id?: number
   in_collection?: boolean
   monitored?: boolean
   monitoring_option?: MonitoringOption
@@ -52,6 +50,11 @@ interface TVShowDetails {
   total_size?: number
   downloaded_episodes?: number
   total_episodes_count?: number
+}
+
+interface LibraryPathOption {
+  name: string
+  path: string
 }
 // Interfaces now imported from SeasonAccordion component
 
@@ -62,7 +65,6 @@ export default function TVShowDetail() {
   const [expandedSeasons, setExpandedSeasons] = useState<Set<number>>(new Set())
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showAddToCollectionModal, setShowAddToCollectionModal] = useState(false)
-  const [showDetails, setShowDetails] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [removedShowData, setRemovedShowData] = useState<{ name: string; deletedFromDisk: boolean } | null>(null)
 
@@ -169,7 +171,7 @@ export default function TVShowDetail() {
       const collectionId = show.id // This is the collection database ID
       
       // Use the collection ID for deletion
-      const response = await axios.delete(`/api/collection/tv/${collectionId}?delete_from_disk=${deleteFromDisk}`)
+      await axios.delete(`/api/collection/tv/${collectionId}?delete_from_disk=${deleteFromDisk}`)
       return { deleteFromDisk } // Return the deleteFromDisk flag for the toast
     },
     onSuccess: (data) => {
@@ -226,6 +228,19 @@ export default function TVShowDetail() {
     }
     setExpandedSeasons(newExpanded)
   }
+
+  // Fetch TV library paths for path selector (used when in collection)
+  const { data: tvLibPaths } = useQuery<{ library_paths: LibraryPathOption[] }>({
+    queryKey: ['tv-library-paths'],
+    queryFn: async () => {
+      const res = await axios.get('/api/config/tv/library-paths')
+      // Normalize to { library_paths: LibraryPathOption[] }
+      const paths: LibraryPathOption[] = Array.isArray(res.data)
+        ? res.data
+        : res.data?.library_paths || []
+      return { library_paths: paths }
+    }
+  })
 
   if (isLoading) {
     return (
@@ -293,8 +308,8 @@ export default function TVShowDetail() {
     }
   }
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
+  const formatFileSize = (bytes?: number): string => {
+    if (!bytes || bytes === 0) return '0 B'
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
@@ -306,269 +321,202 @@ export default function TVShowDetail() {
     removeShowMutation.mutate(deleteFromDisk)
   }
 
+  const year = show.first_air_date ? formatDate(show.first_air_date) : undefined
+  const heroImageUrl = show.backdrop_url || show.poster_url || null
+  const isPosterHero = !show.backdrop_url && !!show.poster_url
+
   return (
     <>
-      <PageHeader 
-        title={show.title}
-        actions={
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center space-x-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
-            </button>
-            {!show.in_collection ? (
-              <button 
-                onClick={() => setShowAddToCollectionModal(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-              >
-                <Download className="w-4 h-4" />
-                <span>Add to Collection</span>
-              </button>
-            ) : (
-              <button 
-                onClick={() => setShowDeleteModal(true)}
-                className="group flex items-center space-x-2 px-4 py-2 bg-purple-600 hover:bg-red-600 text-white rounded-lg transition-colors"
-              >
-                <CheckCircle className="w-4 h-4 group-hover:hidden" />
-                <Trash2 className="w-4 h-4 hidden group-hover:inline" />
-                <span className="group-hover:hidden">In Collection</span>
-                <span className="hidden group-hover:inline">Remove</span>
-              </button>
-            )}
-          </div>
-        }
-      />
-      
-      <div className="p-6">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Poster */}
-          <div className="w-28 sm:w-32 lg:w-56 flex-shrink-0">
-            <div className="sticky top-24">
-              {show.poster_url ? (
-                <img
-                  src={show.poster_url}
-                  alt={show.title}
-                  className="w-full rounded-lg shadow-2xl"
-                />
-              ) : (
-                <div className="w-full aspect-[2/3] bg-slate-700 rounded-lg flex items-center justify-center">
-                  <Tv className="w-6 h-6 sm:w-8 sm:h-8 lg:w-12 lg:h-12 text-slate-500" />
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Hero Header */}
+      <div className="relative">
+        {/* Backdrop */}
+        <div className="relative h-[260px] sm:h-[320px] md:h-[380px] lg:h-[420px] overflow-hidden">
+          {heroImageUrl ? (
+            <img
+              src={heroImageUrl}
+              alt={`${show.title} backdrop`}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-slate-900" />
+          )}
+          {/* Gradient overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-slate-950/10" />
+          <div className={`absolute inset-0 ${isPosterHero ? 'backdrop-blur-[16px]' : 'backdrop-blur-[8px]'}`} />
+        </div>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            {/* Collapsible Details Section */}
-            <div className="mb-8">
-              <div className="bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-2xl overflow-hidden transition-all duration-300 hover:border-slate-600/50">
-                <button
-                  onClick={() => setShowDetails(!showDetails)}
-                  className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-slate-800/40 transition-colors group"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-700/50 flex items-center justify-center group-hover:bg-slate-600/50 transition-colors">
-                      {showDetails ? (
-                        <ChevronDown className="w-4 h-4 text-slate-300" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-slate-300" />
-                      )}
-                    </div>
-                    <span className="text-white font-medium">Details</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-2 px-3 py-1.5 bg-slate-700/40 rounded-lg border border-slate-600/30">
-                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="text-sm font-medium text-slate-200">{formatDate(show.first_air_date)}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 px-3 py-1.5 bg-slate-700/40 rounded-lg border border-slate-600/30">
-                      <Star className="w-3.5 h-3.5 text-yellow-400 fill-current" />
-                      <span className="text-sm font-medium text-slate-200">{show.rating.toFixed(1)}/10</span>
-                    </div>
-                    <div className="flex items-center space-x-2 px-3 py-1.5 bg-slate-700/40 rounded-lg border border-slate-600/30">
-                      <Tv className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="text-sm font-medium text-slate-200">{show.number_of_seasons} {show.number_of_seasons === 1 ? 'Season' : 'Seasons'}</span>
-                    </div>
-                    <div className="flex items-center space-x-2 px-3 py-1.5 bg-gradient-to-r from-emerald-900/30 to-emerald-800/30 rounded-lg border border-emerald-700/40">
-                      <Users className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-sm font-medium text-emerald-200">{show.status}</span>
-                    </div>
-                  </div>
-                </button>
-                
-                {showDetails && (
-                  <div className="px-6 pb-6 border-t border-slate-700/30">
-                    <div className="pt-6 space-y-6">
-                      {/* Stats Cards */}
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <div className="bg-slate-700/30 rounded-xl p-4 text-center">
-                          <Calendar className="w-5 h-5 text-slate-400 mx-auto mb-2" />
-                          <div className="text-xs text-slate-400 mb-1">First Aired</div>
-                          <div className="text-white font-semibold">{formatDate(show.first_air_date)}</div>
-                        </div>
-                        
-                        <div className="bg-slate-700/30 rounded-xl p-4 text-center">
-                          <Star className="w-5 h-5 text-yellow-400 fill-current mx-auto mb-2" />
-                          <div className="text-xs text-slate-400 mb-1">Rating</div>
-                          <div className="text-white font-semibold">{show.rating.toFixed(1)}/10</div>
-                          <div className="text-xs text-slate-500">({show.vote_count?.toLocaleString() || '0'} votes)</div>
-                        </div>
-                        
-                        <div className="bg-slate-700/30 rounded-xl p-4 text-center">
-                          <Clock className="w-5 h-5 text-slate-400 mx-auto mb-2" />
-                          <div className="text-xs text-slate-400 mb-1">Runtime</div>
-                          <div className="text-white font-semibold">{formatRuntime(show.episode_run_time)}</div>
-                        </div>
-                        
-                        <div className="bg-slate-700/30 rounded-xl p-4 text-center">
-                          <Tv className="w-5 h-5 text-slate-400 mx-auto mb-2" />
-                          <div className="text-xs text-slate-400 mb-1">Seasons</div>
-                          <div className="text-white font-semibold">{show.number_of_seasons}</div>
-                        </div>
-                        
-                        <div className="bg-slate-700/30 rounded-xl p-4 text-center">
-                          <Play className="w-5 h-5 text-slate-400 mx-auto mb-2" />
-                          <div className="text-xs text-slate-400 mb-1">Episodes</div>
-                          <div className="text-white font-semibold">{show.number_of_episodes}</div>
-                        </div>
-                        
-                        <div className="bg-slate-700/30 rounded-xl p-4 text-center">
-                          <Users className="w-5 h-5 text-slate-400 mx-auto mb-2" />
-                          <div className="text-xs text-slate-400 mb-1">Status</div>
-                          <div className="text-white font-semibold text-sm">{show.status}</div>
-                        </div>
-                      </div>
-
-                      {/* Genres & Networks Side by Side */}
-                      {(show.genres && show.genres.length > 0) || (show.networks && show.networks.length > 0) ? (
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                          {/* Genres */}
-                          {show.genres && show.genres.length > 0 && (
-                            <div>
-                              <h4 className="text-sm font-medium text-slate-300 mb-3 flex items-center">
-                                <div className="w-1 h-4 bg-blue-500 rounded-full mr-2"></div>
-                                Genres
-                              </h4>
-                              <div className="flex flex-wrap gap-2">
-                                {show.genres.map((genre) => (
-                                  <span
-                                    key={genre}
-                                    className="px-3 py-1.5 bg-gradient-to-r from-slate-700/50 to-slate-600/50 text-slate-200 rounded-lg text-sm font-medium border border-slate-600/30"
-                                  >
-                                    {genre}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Networks */}
-                          {show.networks && show.networks.length > 0 && (
-                            <div>
-                              <h4 className="text-sm font-medium text-slate-300 mb-3 flex items-center">
-                                <div className="w-1 h-4 bg-purple-500 rounded-full mr-2"></div>
-                                Networks
-                              </h4>
-                              <div className="flex flex-wrap gap-2">
-                                {show.networks.map((network) => (
-                                  <span
-                                    key={network}
-                                    className="px-3 py-1.5 bg-gradient-to-r from-purple-900/40 to-purple-800/40 text-purple-200 rounded-lg text-sm font-medium border border-purple-700/40"
-                                  >
-                                    {network}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : null}
-                    </div>
+        {/* Content overlay */}
+        <div className="container mx-auto px-4 sm:px-6 -mt-24 relative z-10">
+          <div className="flex items-end gap-6">
+            {/* Poster */}
+            <div className="hidden sm:block w-28 sm:w-32 md:w-40 lg:w-48 xl:w-56 flex-shrink-0">
+              <div className="relative -mt-24 rounded-xl overflow-hidden shadow-2xl ring-1 ring-black/20">
+                {show.poster_url ? (
+                  <img src={show.poster_url} alt={show.title} className="w-full object-cover" />
+                ) : (
+                  <div className="w-full aspect-[2/3] bg-slate-800 flex items-center justify-center">
+                    <Tv className="w-10 h-10 text-slate-500" />
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Overview */}
-            {show.overview && (
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-white mb-3">Overview</h2>
-                <p className="text-slate-300 leading-relaxed">{show.overview}</p>
-              </div>
-            )}
+            {/* Title and actions */}
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <button
+                      onClick={() => navigate(-1)}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/70 hover:bg-slate-700 text-white text-sm"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      Back
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white truncate">
+                      {show.title}
+                    </h1>
+                    {year && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-800/60 border border-slate-700/50 text-sm text-slate-200">
+                        {year}
+                      </span>
+                    )}
+                  </div>
 
-            {/* Collection Status */}
-            {show.in_collection && (
-              <div className="mb-8 p-6 bg-gradient-to-br from-green-900/15 to-emerald-900/10 border border-green-700/25 rounded-xl">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-green-300 flex items-center space-x-2">
-                    <CheckCircle className="w-5 h-5" />
-                    <span>In Collection</span>
-                  </h3>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-slate-400 text-sm">Monitoring:</span>
-                    <MonitoringDropdown
-                      value={show.monitoring_option || 'None'}
-                      onChange={(option) => updateMonitoringMutation.mutate(option)}
-                      disabled={updateMonitoringMutation.isPending}
-                    />
+                  {/* Key stats */}
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-slate-200/90">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/50 text-sm">
+                      <Star className="w-4 h-4 text-yellow-400" />
+                      {show.rating?.toFixed ? show.rating.toFixed(1) : show.rating}/10
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/50 text-sm">
+                      <Tv className="w-4 h-4" />
+                      {show.number_of_seasons} {show.number_of_seasons === 1 ? 'Season' : 'Seasons'}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/50 text-sm">
+                      <Clock className="w-4 h-4" />
+                      {formatRuntime(show.episode_run_time)}
+                    </span>
+                    {/* Episodes pill moved inline */}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/50 text-sm">
+                      <Tv className="w-4 h-4" />
+                      {(show.downloaded_episodes || 0)}/{show.total_episodes_count || show.number_of_episodes} episodes
+                    </span>
+                    {/* Total size pill moved inline */}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/50 text-sm">
+                      <HardDrive className="w-4 h-4" />
+                      {formatFileSize(show.total_size)}
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-800/40 border border-emerald-700/40 text-emerald-200 text-sm">
+                      <Users className="w-4 h-4" />
+                      {show.status}
+                    </span>
+                    {show.networks && show.networks.length > 0 && show.networks.slice(0, 4).map((network) => (
+                      <span key={network} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/50 text-sm">
+                        <Broadcast className="w-4 h-4" />
+                        {network}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* In-collection details moved into hero (pills removed; now inline above) */}
+                  {show.in_collection && null}
+
+                  {/* Details line below: genres only */}
+                  <div className="mt-3">
+                    {show.genres && show.genres.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {show.genres.slice(0, 8).map((genre) => (
+                          <span key={genre} className="px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/50 text-xs text-slate-200">
+                            {genre}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
-                
-                <div className="space-y-4">
-                  {/* Collection Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-slate-800/50 rounded-lg p-3">
-                      <div className="text-xs text-slate-400 uppercase tracking-wide font-medium mb-1">Downloaded</div>
-                      <div className="text-sm text-slate-200 font-semibold">
-                        {show.downloaded_episodes || 0}/{show.total_episodes_count || show.number_of_episodes}
-                      </div>
-                    </div>
-                    <div className="bg-slate-800/50 rounded-lg p-3">
-                      <div className="text-xs text-slate-400 uppercase tracking-wide font-medium mb-1">Library Path</div>
-                      <div className="text-sm text-slate-200 font-semibold" title={show.library_path_name || "Unknown"}>
-                        {show.library_path_name || "Unknown"}
-                      </div>
-                    </div>
-                    <div className="bg-slate-800/50 rounded-lg p-3">
-                      <div className="text-xs text-slate-400 uppercase tracking-wide font-medium mb-1">Total Size</div>
-                      <div className="text-sm text-slate-200 font-semibold">
-                        {show.total_size && show.total_size > 0 ? formatFileSize(show.total_size) : "0 B"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
-            {/* Seasons & Episodes */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold text-white mb-4">Seasons & Episodes</h3>
-              <div className="space-y-2">
-                {show.seasons
-                  .filter((season) => season.season_number !== 0) // Filter out specials
-                  .sort((a, b) => a.season_number - b.season_number) // Simple ascending sort
-                  .map((season) => (
-                    <SeasonAccordion
-                      key={season.id}
-                      season={season}
-                      showId={id!}
-                      isCollectionShow={show.in_collection || false}
-                      isExpanded={expandedSeasons.has(season.season_number)}
-                      onToggle={() => toggleSeason(season.season_number)}
-                      showTmdbId={show.tmdb_id} // Pass the stored TMDB ID
-                    />
-                  ))}
+                {/* Actions */}
+                <div className="mb-4 flex flex-col items-stretch sm:items-end">
+                  {!show.in_collection ? (
+                    <div className="flex justify-end">
+                      <button 
+                        onClick={() => setShowAddToCollectionModal(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                      >
+                        <Download className="w-5 h-5" />
+                        Add to Collection
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3 justify-end">
+                        <button 
+                          onClick={() => setShowDeleteModal(true)}
+                          className="group inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-red-600 text-white rounded-lg transition-colors"
+                        >
+                          <CheckCircle className="w-5 h-5 group-hover:hidden" />
+                          <Trash2 className="w-5 h-5 hidden group-hover:inline" />
+                          <span className="group-hover:hidden">In Collection</span>
+                          <span className="hidden group-hover:inline">Remove</span>
+                        </button>
+                      </div>
+                      {/* Management section below: monitoring + disk selector */}
+                      <div className="mt-2 flex flex-wrap items-center gap-2 justify-end">
+                        <MonitoringDropdown
+                          value={show.monitoring_option || 'None'}
+                          onChange={(option) => updateMonitoringMutation.mutate(option)}
+                          disabled={updateMonitoringMutation.isPending}
+                        />
+                        <DiskDropdown
+                          value={show.library_path_name || ''}
+                          options={(tvLibPaths?.library_paths || [{ name: show.library_path_name || 'Unknown', path: show.folder_path || '' }])}
+                          onChange={() => { /* Future: update library path */ }}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
+
+      {/* Main content */}
+      <div className="container mx-auto px-4 sm:px-6 py-6 space-y-8">
+        {/* Overview (full width) */}
+        {show.overview && (
+          <div>
+            <h2 className="text-xl font-semibold text-white mb-3">Overview</h2>
+            <p className="text-slate-300 leading-relaxed">{show.overview}</p>
+          </div>
+        )}
+
+        {/* Seasons & Episodes full width */}
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-4">Seasons & Episodes</h3>
+          <div className="space-y-2">
+            {show.seasons
+              .filter((season) => season.season_number !== 0)
+              .sort((a, b) => a.season_number - b.season_number)
+              .map((season) => (
+                <SeasonAccordion
+                  key={season.id}
+                  season={season}
+                  showId={id!}
+                  isCollectionShow={show.in_collection || false}
+                  isExpanded={expandedSeasons.has(season.season_number)}
+                  onToggle={() => toggleSeason(season.season_number)}
+                  showTmdbId={show.tmdb_id}
+                />
+              ))}
+          </div>
+        </div>
+      </div>
+
       <DeleteConfirmationModal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}

@@ -70,7 +70,7 @@ export default function History() {
                   className="p-1 text-slate-400 hover:text-red-400 transition-colors"
                   title="Remove"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash className="w-4 h-4" />
                 </button>
               </div>
             </div>

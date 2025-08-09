@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { CaretLeft as ChevronLeft, Folder, File, CaretUp as ChevronUp } from '@phosphor-icons/react';
+import { useState, useEffect } from 'react';
+import { Folder, File, CaretUp as ChevronUp } from '@phosphor-icons/react';
 
 interface FileSystemItem {
   name: string;
@@ -20,36 +20,33 @@ interface FileBrowserProps {
   onSelectPath?: (path: string) => void;
   selectedPath?: string;
   showFiles?: boolean;
-  title?: string;
 }
 
 export function FileBrowser({ 
   onSelectPath, 
   selectedPath, 
-  showFiles = false, 
-  title = "Browse Folders" 
+  showFiles = false
 }: FileBrowserProps) {
   const [currentPath, setCurrentPath] = useState<string>('/');
   const [listing, setListing] = useState<DirectoryListing | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [roots, setRoots] = useState<Array<{ name: string; path: string }>>([]);
 
-  // Load filesystem roots on mount
+  // Load filesystem roots on mount — set to first root if available, otherwise '/'
   useEffect(() => {
     const loadRoots = async () => {
       try {
         const response = await fetch('/api/filesystem/roots');
         const data = await response.json();
-        setRoots(data.roots || []);
-        
-        // Set initial path to home if available
-        const homeRoot = data.roots?.find((root: any) => root.name.includes('Home'));
-        if (homeRoot) {
+        const homeRoot = data.roots?.find((root: any) => root.name?.includes('Home')) || data.roots?.[0];
+        if (homeRoot?.path) {
           setCurrentPath(homeRoot.path);
+        } else {
+          setCurrentPath('/');
         }
       } catch (err) {
         console.error('Failed to load filesystem roots:', err);
+        setCurrentPath('/');
       }
     };
     

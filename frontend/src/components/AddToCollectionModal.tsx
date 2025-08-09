@@ -8,9 +8,7 @@ import {
   Television as Tv,
   CheckCircle,
   HardDrive,
-  FolderPlus,
-  Folder,
-  CaretDown as ChevronDown
+  FolderPlus
 } from '@phosphor-icons/react'
 import axios from 'axios'
 import Toast from './Toast'
@@ -316,22 +314,24 @@ export default function AddToCollectionModal({
               </div>
               <div className="text-red-300 text-sm mt-2 break-words overflow-hidden">
                 {(() => {
-                  const errorMsg = addToCollectionMutation.error?.response?.data?.detail || 
-                                  addToCollectionMutation.error?.message || 
-                                  'Please try again or check your connection.'
-                  
-                  // Clean up common error patterns to be more user-friendly
+                  let errorMsg = 'Please try again or check your connection.'
+                  const err = addToCollectionMutation.error as unknown
+                  if (axios.isAxiosError(err)) {
+                    const detail = (err.response?.data as any)?.detail
+                    errorMsg = detail || err.message || errorMsg
+                  } else if (err && typeof err === 'object' && 'message' in (err as any)) {
+                    errorMsg = (err as any).message || errorMsg
+                  }
+
                   if (errorMsg.includes('IntegrityError')) {
                     return 'This show conflicts with existing data. It may already be in your collection. Try checking your Shows library.'
                   }
                   if (errorMsg.includes('already in your collection') || errorMsg.includes('already exists')) {
-                    return errorMsg // Use the server's user-friendly message
+                    return errorMsg
                   }
                   if (errorMsg.includes('TMDB')) {
                     return 'Unable to fetch show information from TMDB. Please check your API key or try again later.'
                   }
-                  
-                  // Truncate very long error messages
                   return errorMsg.length > 200 ? errorMsg.substring(0, 197) + '...' : errorMsg
                 })()} 
               </div>

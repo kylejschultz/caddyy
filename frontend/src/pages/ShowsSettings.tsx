@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
-import { Television as Tv, Folder, HardDrive, Plus, Trash as Trash2, Gear as SettingsIcon, FloppyDisk as Save, ArrowCounterClockwise as RotateCcw } from '@phosphor-icons/react'
+import { Plus, FloppyDisk as Save, ArrowCounterClockwise as RotateCcw, Folder, HardDrive } from '@phosphor-icons/react'
 import PageHeader from '../components/PageHeader'
 import PathInput from '../components/PathInput'
 import { validatePath } from '../utils/pathValidation'
@@ -22,8 +21,8 @@ interface TVConfig {
 
 export default function ShowsSettings() {
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
-  const location = useLocation()
+  // const navigate = useNavigate()
+  // const location = useLocation()
   const [newLibraryPath, setNewLibraryPath] = useState({ name: '', path: '' })
   const [isAddingLibrary, setIsAddingLibrary] = useState(false)
   const [editableConfig, setEditableConfig] = useState<TVConfig | null>(null)
@@ -82,7 +81,7 @@ export default function ShowsSettings() {
     mutationFn: (updatedConfig: TVConfig) => 
       axios.put('/api/config/tv/', updatedConfig).then(res => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['tv-config'])
+      queryClient.invalidateQueries({ queryKey: ['tv-config'] })
       setOriginalConfig(JSON.parse(JSON.stringify(editableConfig)))
       setIsDirty(false)
       setShowToast(true)
@@ -94,7 +93,7 @@ export default function ShowsSettings() {
     mutationFn: (directory: { name: string; path: string; enabled: boolean }) => 
       axios.post('/api/config/tv/library-paths', directory).then(res => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['tv-config'])
+      queryClient.invalidateQueries({ queryKey: ['tv-config'] })
       setNewLibraryPath({ name: '', path: '' })
       setIsAddingLibrary(false)
     },
@@ -105,7 +104,7 @@ export default function ShowsSettings() {
     mutationFn: (index: number) => 
       axios.delete(`/api/config/tv/library-paths/${index}`).then(res => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['tv-config'])
+      queryClient.invalidateQueries({ queryKey: ['tv-config'] })
     },
   })
 
@@ -178,9 +177,6 @@ export default function ShowsSettings() {
     }
   }
 
-  const isFieldChanged = (originalValue: any, currentValue: any) => {
-    return JSON.stringify(originalValue) !== JSON.stringify(currentValue)
-  }
 
   const headerActions = (
     <>

@@ -1,4 +1,4 @@
-import { Download, Pulse as Activity, CheckCircle, ClockCounterClockwise as History } from '@phosphor-icons/react'
+import { Pulse as Activity, CheckCircle, ClockCounterClockwise as History } from '@phosphor-icons/react'
 import PageHeader from '../components/PageHeader'
 
 export default function Downloads() {

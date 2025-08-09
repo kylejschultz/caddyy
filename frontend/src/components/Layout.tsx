@@ -17,7 +17,9 @@ import {
   UploadSimple,
   Pulse,
   CaretDoubleLeft,
-  CaretDoubleRight
+  CaretDoubleRight,
+  Broadcast,
+  GithubLogo
 } from '@phosphor-icons/react'
 import clsx from 'clsx'
 
@@ -307,6 +309,32 @@ export default function Layout({ children }: LayoutProps) {
               {navigationGroups[1].items.map(renderNavigationItem)}
             </ul>
           </nav>
+
+          {/* Sidebar footer */}
+          {!isCollapsed && (
+            <div className="mt-auto px-4 py-4 border-t border-gray-200 dark:border-slate-800 text-xs text-gray-500 dark:text-slate-400 space-y-3">
+              <div className="pt-1 flex justify-center">
+                <a
+                  href="https://github.com/kylejschultz/caddyy"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white"
+                  title="Caddyy on GitHub"
+                >
+                  <GithubLogo className="w-5 h-5" />
+                </a>
+              </div>
+              <div className="text-center">
+                <span className="text-[11px] text-gray-600 dark:text-slate-400">Created by Kyle Schultz — 2025</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Broadcast className="w-4 h-4" />
+                <span>
+                  Metadata provided by <span className="text-gray-700 dark:text-slate-200 font-medium">TheTVDB</span>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Main content with left margin to account for fixed sidebar */}

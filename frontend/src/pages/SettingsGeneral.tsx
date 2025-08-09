@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
-import { FloppyDisk as Save, ArrowCounterClockwise as RotateCcw, Gear as SettingsIcon, User, Shield, Folder as FolderIcon, Sun, Moon, Monitor, Plus, Trash } from '@phosphor-icons/react'
+import { FloppyDisk as Save, ArrowCounterClockwise as RotateCcw, Gear as SettingsIcon, User, Shield, Folder as FolderIcon, Sun, Moon, Monitor, Plus } from '@phosphor-icons/react'
 import axios from 'axios'
 import PageHeader from '../components/PageHeader'
-import SidebarNavigation from '../components/SidebarNavigation'
+// import SidebarNavigation from '../components/SidebarNavigation'
 import PathInput from '../components/PathInput'
 import { useTheme, Theme } from '../contexts/ThemeContext'
 import { validatePath } from '../utils/pathValidation'
@@ -29,7 +29,7 @@ interface MediaDirectory {
 export default function Settings() {
   const location = useLocation()
   const queryClient = useQueryClient()
-  const { theme, setTheme } = useTheme()
+  const { setTheme } = useTheme()
   const [formData, setFormData] = useState<AppConfig | null>(null)
   const [isAddingDownloadPath, setIsAddingDownloadPath] = useState(false)
   const [newDownloadPath, setNewDownloadPath] = useState({ name: '', path: '' })
@@ -67,7 +67,7 @@ export default function Settings() {
     mutationFn: (directory: { name: string; path: string; enabled: boolean }) => 
       axios.post('/api/settings/download-paths', directory).then(res => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['settings'])
+      queryClient.invalidateQueries({ queryKey: ['settings'] })
       setNewDownloadPath({ name: '', path: '' })
       setIsAddingDownloadPath(false)
     },
@@ -77,7 +77,7 @@ export default function Settings() {
     mutationFn: (index: number) => 
       axios.delete(`/api/settings/download-paths/${index}`).then(res => res.data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['settings'])
+      queryClient.invalidateQueries({ queryKey: ['settings'] })
     },
   })
 
@@ -304,7 +304,7 @@ export default function Settings() {
                       type="button"
                       onClick={() => handleInputChange('theme', t)}
                       className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors ${
-                        formData.theme === t
+                        formData!.theme === t
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-300 dark:hover:bg-slate-600'
                       }`}>
@@ -325,7 +325,7 @@ export default function Settings() {
                   Log Level
                 </label>
                 <select
-                  value={formData.log_level}
+                  value={formData!.log_level}
                   onChange={(e) => handleInputChange('log_level', e.target.value)}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
@@ -342,7 +342,7 @@ export default function Settings() {
                   Authentication
                 </label>
                 <select
-                  value={formData.authentication}
+                  value={formData!.authentication}
                   onChange={(e) => handleInputChange('authentication', e.target.value)}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
@@ -359,7 +359,7 @@ export default function Settings() {
                   Timezone
                 </label>
                 <select
-                  value={formData.timezone}
+                  value={formData!.timezone}
                   onChange={(e) => handleInputChange('timezone', e.target.value)}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
@@ -380,7 +380,7 @@ export default function Settings() {
                   Date/Time Format
                 </label>
                 <select
-                  value={formData.date_time_format}
+                  value={formData!.date_time_format}
                   onChange={(e) => handleInputChange('date_time_format', e.target.value)}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 >
@@ -394,14 +394,14 @@ export default function Settings() {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  Auto-Match Threshold: {Math.round((formData.auto_match_threshold || 0.8) * 100)}%
+                  Auto-Match Threshold: {Math.round((formData!.auto_match_threshold || 0.8) * 100)}%
                 </label>
                 <input
                   type="range"
                   min="0.5"
                   max="1"
                   step="0.05"
-                  value={formData.auto_match_threshold || 0.8}
+                  value={formData!.auto_match_threshold || 0.8}
                   onChange={(e) => handleInputChange('auto_match_threshold', parseFloat(e.target.value))}
                   className="w-full h-2 bg-gray-300 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
                 />
@@ -420,7 +420,7 @@ export default function Settings() {
                 </label>
                 <input
                   type="password"
-                  value={formData.tmdb_api_key}
+                  value={formData!.tmdb_api_key}
                   onChange={(e) => handleInputChange('tmdb_api_key', e.target.value)}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors font-mono text-sm"
                   placeholder="Enter your TMDB API key"
@@ -451,7 +451,7 @@ export default function Settings() {
 
                 <div className="space-y-4">
                   <PathInput
-                    directories={formData.download_paths || []}
+                    directories={formData!.download_paths || []}
                     onDirectoryChange={handleDownloadPathChange}
                     onDirectoryBlur={handleDownloadPathBlur}
                     onDeleteDirectory={(index) => deleteDownloadPathMutation.mutate(index)}
