@@ -8,16 +8,28 @@ Caddyy is a lightweight media manager for personal libraries. It helps you organ
 
 ### Current Features
 
-- Plex-style libraries allow for multiple disks/folders per library with easy-to-spot usage details allows for deeper management over separted libraries (TV Shows 1080p/4k, Anime, Movies 1080p/4k, etc)
+- Plex-style libraries with multiple disks/folders per library and easy-to-spot disk usage details.
+   - Allows for deeper management over seperated libraries (TV Shows 1080p/4k, Anime, Movies 1080p/4k, etc)
 - Live search and metadata powered by TheTVDB provides graphics and other metadata for shows or movies
-- Modern UI: dark/light theme, responsive, keyboard-friendly
 
 ### Roadmap
 - Fully integrate with Newznab downloaders and indexers
-- Easy-to-configure quality profiles, upgrades and thresholds
-- First-time setup wizard
-- File management and post-processing
+- Create quality profiles (integrated with TRaSHGuides) with automated upgrades and thresholds
+- New user first-time setup wizard
+- File management and post-processing (custom/default naming conventions)
 - Docker image creation/pipelines
+
+## Usage
+### Installation
+Currently, there is no full deployment mechanism. Follow the steps in Development Setup below to run the application locally. Once the Docker image has been created, this section will contain both Docker and Docker Compose instructions.
+
+### Initial Configuration
+
+1. Add your TMDB API key in Settings → General
+2. Create one or more Libraries in Settings → Libraries, adding folders (disks) to each
+3. Pick a theme (System, Light, or Dark)
+
+> A first-time user wizard will be created to walk through the basic steps of intitial configuration.
 
 ## Development Setup
 
@@ -57,16 +69,6 @@ The `dev.sh` script will:
 - Start the Vite frontend dev server on `http://localhost:3000`
 - Provide hot-reload for both frontend and backend changes
 - Display health status and useful URLs
-
-## Usage
-
-### Initial Configuration
-
-1. Add your TMDB API key in Settings → General
-2. Create one or more Libraries in Settings → Libraries, adding folders (disks) to each
-3. Pick a theme (System, Light, or Dark)
-
-> A first-time user wizard will be created to walk through the basic steps of intitial configuration.
 
 ## Contributing
 
